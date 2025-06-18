@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Accueil{% endblock %}
+{% block content %}
+<h1>Projets Agricoles</h1>
+<ul>
+    {% for project in projects %}
+    <li>
+        <a href="{{ url_for('project_detail', project_id=project.id) }}">
+            {{ project.title }} — Besoin : {{ project.amount_needed }} HTG
+        </a>
+    </li>
+    {% else %}
+    <li>Aucun projet publié.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

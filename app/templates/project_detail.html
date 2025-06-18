@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Détails du projet{% endblock %}
+{% block content %}
+<h1>{{ project.title }}</h1>
+<p><strong>Description :</strong> {{ project.description }}</p>
+<p><strong>Localisation :</strong> {{ project.location }}</p>
+<p><strong>Montant nécessaire :</strong> {{ project.amount_needed }} HTG</p>
+
+{% if current_user.is_authenticated and current_user.role == 'investor' %}
+    <h2>Contribuer à ce projet</h2>
+    <form method="POST">
+        <label>Montant à investir (HTG)</label><br>
+        <input type="number" name="amount" step="0.01" required><br><br>
+        <button type="submit">Contribuer</button>
+    </form>
+{% endif %}
+{% endblock %}

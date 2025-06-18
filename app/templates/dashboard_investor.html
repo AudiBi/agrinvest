@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Investisseur{% endblock %}
+{% block content %}
+<h1>Mes Contributions</h1>
+<ul>
+    {% for inv in investments %}
+    <li>
+        Projet: {{ inv.project.title }} — Montant: {{ inv.amount }} HTG
+        — <a href="{{ url_for('download_contract', investment_id=inv.id) }}">Télécharger contrat PDF</a>
+    </li>
+    {% else %}
+    <p>Aucune contribution effectuée.</p>
+    {% endfor %}
+</ul>
+{% endblock %}

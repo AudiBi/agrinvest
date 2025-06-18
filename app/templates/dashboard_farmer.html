@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Agriculteur{% endblock %}
+{% block content %}
+<h1>Mes Projets</h1>
+<a href="{{ url_for('new_project') }}">Créer un nouveau projet</a>
+<ul>
+    {% for p in projects %}
+    <li>{{ p.title }} — Objectif : {{ p.amount_needed }} HTG</li>
+    {% else %}
+    <p>Vous n'avez pas encore créé de projet.</p>
+    {% endfor %}
+</ul>
+{% endblock %}
