@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Nouveau Projet{% endblock %}
+{% block content %}
+<h1>Créer un nouveau projet</h1>
+<form method="POST">
+    <label>Titre</label><br>
+    <input type="text" name="title" required><br>
+
+    <label>Description</label><br>
+    <textarea name="description"></textarea><br>
+
+    <label>Localisation</label><br>
+    <input type="text" name="location"><br>
+
+    <label>Montant nécessaire (HTG)</label><br>
+    <input type="number" name="amount_needed" step="0.01" required><br><br>
+
+    <button type="submit">Créer</button>
+</form>
+{% endblock %}

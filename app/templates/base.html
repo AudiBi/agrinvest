@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Agri-Invest{% endblock %}</title>
+</head>
+<body>
+<nav>
+    {% if current_user.is_authenticated %}
+        Bonjour {{ current_user.name }} |
+        <a href="{{ url_for('main.dashboard') }}">Dashboard</a> |
+        <a href="{{ url_for('main.logout') }}">Déconnexion</a>
+    {% else %}
+        <a href="{{ url_for('main.login') }}">Connexion</a> |
+        <a href="{{ url_for('main.register') }}">Inscription</a>
+    {% endif %}
+</nav>
+<hr>
+<div>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+</div>
+{% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; }
+        h1 { color: #2e7d32; }
+        p { font-size: 14px; }
+        .footer { margin-top: 50px; font-size: 12px; color: #777; }
+        .highlight { font-weight: bold; color: #388e3c; }
+        hr { border: none; border-top: 2px solid #2e7d32; margin: 20px 0; }
+    </style>
+    <title>Contrat d'investissement</title>
+</head>
+<body>
+    <h1>Contrat d'investissement agricole</h1>
+    <p>Ce contrat est établi le <span class="highlight">{{ date }}</span> entre :</p>
+    <p><span class="highlight">{{ investor_name }}</span>, investisseur, et <span class="highlight">{{ farmer_name }}</span>, agriculteur.</p>
+    <hr>
+    <p>Le présent contrat confirme un investissement de <span class="highlight">{{ amount }} HTG</span> pour le projet <span class="highlight">{{ project_title }}</span>.</p>
+    <p>Les deux parties conviennent de collaborer pour la réussite de ce projet agricole.</p>
+    <div class="footer">© Agri-Invest - Tous droits réservés</div>
+</body>
+</html>
