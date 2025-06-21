@@ -9,6 +9,9 @@ from app.models import User, Project, Contribution
 from datetime import datetime
 import io, os
 from xhtml2pdf import pisa
+from app.forms import RegisterForm
+from app.models import User
+from werkzeug.security import check_password_hash
 
 bp = Blueprint('main', __name__)
 
@@ -34,47 +37,49 @@ def home():
     projects = Project.query.filter_by(status='published').all()
     return render_template('home.html', projects=projects)
 
-@bp.route('/register', methods=['GET', 'POST'])
+@bp.route("/register", methods=["GET", "POST"])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
-    if request.method == 'POST':
-        role = request.form['role']
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-
-        if User.query.filter_by(email=email).first():
-            flash('Cet email est déjà utilisé.', 'warning')
-            return redirect(url_for('main.register'))
-
-        user = User(role=role, name=name, email=email)
-        user.set_password(password)
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user = User(
+            name=form.name.data,
+            email=form.email.data,
+            role=form.role.data
+        )
+        user.password_plain = form.password.data  
         db.session.add(user)
         db.session.commit()
-        flash('Compte créé. Veuillez vous connecter.', 'success')
-        return redirect(url_for('main.login'))
-    return render_template('register.html')
+        flash("Compte créé avec succès ! Vous pouvez maintenant vous connecter.", "success")
+        return redirect(url_for("main.login"))
+    return render_template("register.html", form=form)
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
         user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
+        if user and check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(url_for('main.dashboard'))
-        flash('Email ou mot de passe invalide.', 'danger')
-    return render_template('login.html')
+            flash("Connexion réussie", "success")
+
+            # Redirection selon le rôle
+            if user.role == "farmer":
+                return redirect(url_for("main.dashboard_farmer"))
+            else:
+                return redirect(url_for("main.dashboard_investor"))
+        else:
+            flash("Email ou mot de passe incorrect", "danger")
+
+    return render_template("login.html")
 
 @bp.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.home'))
+    flash("Vous avez été déconnecté(e).", "info")
+    return redirect(url_for("login"))
 
 @bp.route('/dashboard')
 @login_required
@@ -100,7 +105,16 @@ def new_project():
         title = request.form['title']
         description = request.form.get('description')
         location = request.form.get('location')
-        amount_needed = float(request.form['amount_needed'])
+
+        if not title.strip():
+            flash("Le titre est obligatoire.", "warning")
+            return render_template('new_project.html')
+
+        try:
+            amount_needed = float(request.form['amount_needed'])
+        except ValueError:
+            flash("Le montant doit être un nombre valide.", "warning")
+            return render_template('new_project.html')
 
         project = Project(
             title=title,
@@ -116,6 +130,7 @@ def new_project():
         return redirect(url_for('main.dashboard'))
 
     return render_template('new_project.html')
+
 
 @bp.route('/project/<int:project_id>', methods=['GET', 'POST'])
 @login_required
