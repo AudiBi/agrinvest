@@ -1,13 +1,23 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard Agriculteur{% endblock %}
+
 {% block content %}
-<h1>Mes Projets</h1>
-<a href="{{ url_for('new_project') }}">Créer un nouveau projet</a>
-<ul>
+<h1 class="mb-4">Mes projets agricoles</h1>
+
+<a href="{{ url_for('new_project') }}" class="btn btn-success mb-3">+ Créer un nouveau projet</a>
+
+{% if projects %}
+  <ul class="list-group">
     {% for p in projects %}
-    <li>{{ p.title }} — Objectif : {{ p.amount_needed }} HTG</li>
-    {% else %}
-    <p>Vous n'avez pas encore créé de projet.</p>
+    <li class="list-group-item">
+      <strong>{{ p.title }}</strong><br>
+      Objectif : {{ "{:,.0f}".format(p.amount_needed).replace(",", " ") }} HTG
+    </li>
     {% endfor %}
-</ul>
+  </ul>
+{% else %}
+  <div class="alert alert-info">
+    Vous n'avez pas encore créé de projet. Cliquez sur "Créer un nouveau projet" pour démarrer.
+  </div>
+{% endif %}
 {% endblock %}

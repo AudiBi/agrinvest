@@ -1,23 +1,30 @@
 {% extends 'base.html' %}
 {% block title %}Inscription{% endblock %}
 {% block content %}
-<h1>Inscription</h1>
-<form method="POST">
-    <label>Rôle</label><br>
-    <select name="role" required>
-        <option value="farmer">Agriculteur</option>
-        <option value="investor">Investisseur</option>
-    </select><br>
+<h1 class="mb-4">Inscription</h1>
+<form method="POST" class="w-50 mx-auto">
+    {{ form.hidden_tag() }}
 
-    <label>Nom complet</label><br>
-    <input type="text" name="name" required><br>
+    <div class="mb-3">
+        {{ form.role.label }}<br>
+        {{ form.role(class="form-select") }}
+    </div>
 
-    <label>Email</label><br>
-    <input type="email" name="email" required><br>
+    <div class="mb-3">
+        {{ form.name.label }}
+        {{ form.name(class="form-control") }}
+    </div>
 
-    <label>Mot de passe</label><br>
-    <input type="password" name="password" required><br><br>
+    <div class="mb-3">
+        {{ form.email.label }}
+        {{ form.email(class="form-control") }}
+    </div>
 
-    <button type="submit">S’inscrire</button>
+    <div class="mb-3">
+        {{ form.password.label }}
+        {{ form.password(class="form-control") }}
+    </div>
+
+    <button type="submit" class="btn btn-success">{{ form.submit.label }}</button>
 </form>
 {% endblock %}
