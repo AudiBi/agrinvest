@@ -19,7 +19,7 @@ class User(db.Model, UserMixin):
 
     @password_plain.setter
     def password_plain(self, password):
-        self.password = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password)
 
     def verify_password(self, password):
         return check_password_hash(self.password, password)
@@ -31,7 +31,7 @@ class Project(db.Model):
     location = db.Column(db.String(100))
     amount_needed = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='draft')  # ex: 'draft', 'published'
+    status = db.Column(db.String(20), default='draft')  # ex: 'draft', 'published', 'funded'
     farmer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     contributions = db.relationship('Contribution', backref='project', lazy=True)

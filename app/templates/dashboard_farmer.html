@@ -4,7 +4,7 @@
 {% block content %}
 <h1 class="mb-4">Mes projets agricoles</h1>
 
-<a href="{{ url_for('new_project') }}" class="btn btn-success mb-3">+ Créer un nouveau projet</a>
+<a href="{{ url_for('main.new_project') }}" class="btn btn-success mb-3">+ Créer un nouveau projet</a>
 
 {% if projects %}
   <ul class="list-group">
