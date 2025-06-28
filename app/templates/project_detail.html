@@ -1,17 +1,88 @@
 {% extends 'base.html' %}
 {% block title %}Détails du projet{% endblock %}
 {% block content %}
-<h1>{{ project.title }}</h1>
-<p><strong>Description :</strong> {{ project.description }}</p>
-<p><strong>Localisation :</strong> {{ project.location }}</p>
-<p><strong>Montant nécessaire :</strong> {{ project.amount_needed }} HTG</p>
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-body">
+            <h2 class="card-title">{{ project.title }}</h2>
+            <p class="text-muted">{{ project.location }}</p>
 
-{% if current_user.is_authenticated and current_user.role == 'investor' %}
-    <h2>Contribuer à ce projet</h2>
-    <form method="POST">
-        <label>Montant à investir (HTG)</label><br>
-        <input type="number" name="amount" step="0.01" required><br><br>
-        <button type="submit">Contribuer</button>
-    </form>
-{% endif %}
+            <p><strong>Description :</strong><br>{{ project.description }}</p>
+
+            <hr>
+
+            <h5>Objectif de financement</h5>
+            <p>
+                <strong>Montant nécessaire :</strong> {{ "{:,.2f}".format(project.amount_needed) }} HTG<br>
+                <strong>Déjà collecté :</strong> {{ "{:,.2f}".format(total_collected) }} HTG<br>
+                <strong>Reste à financer :</strong> {{ "{:,.2f}".format(project.amount_needed - total_collected) }} HTG
+            </p>
+
+            <div class="progress my-3" style="height: 30px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                     role="progressbar"
+                     style="width: {{ percent_funded }}%;"
+                     aria-valuenow="{{ percent_funded }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                    {{ percent_funded }}% financé
+                </div>
+            </div>
+
+            {% if current_user.is_authenticated and current_user.role == 'investor' and project.status != 'funded' %}
+                <div class="mt-4">
+                    <h4>Contribuer à ce projet</h4>
+                    <form id="contrib-form" method="POST" novalidate>
+                        <label for="amount">Montant à investir (HTG)</label>
+                        <input type="number"
+                                id="amount"
+                                name="amount"
+                                step="0.01"
+                                min="1"
+                                max="{{ project.amount_needed - total_collected }}"
+                                class="form-control"
+                                required>
+                        <div id="amount-error" class="invalid-feedback"></div>
+
+                        <br>
+                        <button type="submit" class="btn btn-primary">Contribuer</button>
+                        </form>
+
+                        <script>
+                        const form = document.getElementById('contrib-form');
+                        const amountInput = document.getElementById('amount');
+                        const errorDiv = document.getElementById('amount-error');
+                        const maxAmount = parseFloat(amountInput.max);
+
+                        amountInput.addEventListener('input', () => {
+                            amountInput.classList.remove('is-invalid');
+                            errorDiv.textContent = '';
+                        });
+
+                        form.addEventListener('submit', function(event) {
+                            let value = parseFloat(amountInput.value);
+
+                            if (!amountInput.value) {
+                            event.preventDefault();
+                            amountInput.classList.add('is-invalid');
+                            errorDiv.textContent = 'Veuillez entrer un montant.';
+                            } else if (isNaN(value) || value < 1) {
+                            event.preventDefault();
+                            amountInput.classList.add('is-invalid');
+                            errorDiv.textContent = 'Le montant doit être au moins 1 HTG.';
+                            } else if (value > maxAmount) {
+                            event.preventDefault();
+                            amountInput.classList.add('is-invalid');
+                            errorDiv.textContent = `Le montant ne peut pas dépasser ${maxAmount.toFixed(2)} HTG.`;
+                            }
+                        });
+                        </script>
+                </div>
+            {% elif project.status == 'funded' %}
+                <div class="alert alert-success mt-4" role="alert">
+                    Ce projet est totalement financé. Merci pour votre soutien !
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

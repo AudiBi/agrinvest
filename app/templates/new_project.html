@@ -1,20 +1,45 @@
 {% extends 'base.html' %}
 {% block title %}Nouveau Projet{% endblock %}
+
 {% block content %}
 <h1>Créer un nouveau projet</h1>
+
 <form method="POST">
-    <label>Titre</label><br>
-    <input type="text" name="title" required><br>
+    {{ form.hidden_tag() }}
 
-    <label>Description</label><br>
-    <textarea name="description"></textarea><br>
+    <div>
+        {{ form.title.label }}<br>
+        {{ form.title(size=32) }}<br>
+        {% for error in form.title.errors %}
+            <small class="text-danger">{{ error }}</small><br>
+        {% endfor %}
+    </div>
 
-    <label>Localisation</label><br>
-    <input type="text" name="location"><br>
+    <div>
+        {{ form.description.label }}<br>
+        {{ form.description(rows=4) }}<br>
+        {% for error in form.description.errors %}
+            <small class="text-danger">{{ error }}</small><br>
+        {% endfor %}
+    </div>
 
-    <label>Montant nécessaire (HTG)</label><br>
-    <input type="number" name="amount_needed" step="0.01" required><br><br>
+    <div>
+        {{ form.location.label }}<br>
+        {{ form.location(size=32) }}<br>
+        {% for error in form.location.errors %}
+            <small class="text-danger">{{ error }}</small><br>
+        {% endfor %}
+    </div>
 
-    <button type="submit">Créer</button>
+    <div>
+        {{ form.amount_needed.label }}<br>
+        {{ form.amount_needed(step="0.01") }}<br>
+        {% for error in form.amount_needed.errors %}
+            <small class="text-danger">{{ error }}</small><br>
+        {% endfor %}
+    </div>
+
+    <br>
+    {{ form.submit(class="btn btn-success") }}
 </form>
 {% endblock %}

@@ -1,15 +1,100 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard Investisseur{% endblock %}
 {% block content %}
-<h1>Mes Contributions</h1>
-<ul>
-    {% for inv in investments %}
-    <li>
-        Projet: {{ inv.project.title }} — Montant: {{ inv.amount }} HTG
-        — <a href="{{ url_for('download_contract', investment_id=inv.id) }}">Télécharger contrat PDF</a>
-    </li>
+<div class="container mt-5">
+    <h1 class="mb-4">Mes Contributions</h1>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="alert alert-info">
+                <strong>Total investi :</strong> {{ "{:,.2f}".format(total_invested) }} HTG
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{{ url_for('main.export_contributions') }}" class="btn btn-success">
+                 Télécharger l’historique (Excel)
+            </a>
+        </div>
+    </div>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-auto">
+            <label for="projectFilter" class="col-form-label">Filtrer par projet :</label>
+        </div>
+        <div class="col-auto">
+            <select id="projectFilter" name="project_id" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tous les projets --</option>
+                {% for p in all_projects %}
+                    <option value="{{ p.id }}" {% if selected_project == p.id %}selected{% endif %}>
+                        {{ p.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+
+    {% if contributions.items %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Projet</th>
+                    <th>Montant (HTG)</th>
+                    <th>Date</th>
+                    <th>Contrat</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in contributions.items %}
+                <tr>
+                    <td>{{ c.project.title }}</td>
+                    <td>{{ "{:,.2f}".format(c.amount) }}</td>
+                    <td>{{ c.timestamp.strftime("%d/%m/%Y à %H:%M") }}</td>
+                    <td>
+                        <a href="{{ url_for('main.download_contract', contribution_id=c.id) }}" class="btn btn-outline-primary btn-sm">
+                            Télécharger
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Pagination des contributions">
+        <ul class="pagination justify-content-center">
+            {% if contributions.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.dashboard', page=contributions.prev_num, project_id=selected_project) }}">
+                    ← Précédent
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">← Précédent</span></li>
+            {% endif %}
+
+            {% for p in range(1, contributions.pages + 1) %}
+            <li class="page-item {% if contributions.page == p %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('main.dashboard', page=p, project_id=selected_project) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            {% if contributions.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.dashboard', page=contributions.next_num, project_id=selected_project) }}">
+                    Suivant →
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Suivant →</span></li>
+            {% endif %}
+        </ul>
+    </nav>
     {% else %}
-    <p>Aucune contribution effectuée.</p>
-    {% endfor %}
-</ul>
+    <div class="alert alert-warning">
+        Vous n'avez effectué aucune contribution pour le moment.
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
