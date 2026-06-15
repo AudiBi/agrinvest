@@ -4,6 +4,7 @@ from typing import List, Optional, Type, TypeVar
 
 from asn1crypto.crl import CRLReason
 from cryptography.exceptions import InvalidSignature
+
 from pyhanko_certvalidator._state import ValProcState
 from pyhanko_certvalidator.path import ValidationPath
 
@@ -228,4 +229,8 @@ class DSAParametersUnavailable(InvalidSignature):
     # make use of DSA parameter inheritance, which is pretty much a
     # completely irrelevant problem in this day and age, so treating those
     # signatures as invalid as a matter of course seems pretty much OK.
+    pass
+
+
+class AlgorithmNotSupported(InvalidSignature):
     pass

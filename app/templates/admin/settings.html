@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Paramètres - Administration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-success mb-4">
+        <i class="fas fa-cog me-2"></i>Paramètres de la plateforme
+    </h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Nom de l'application</label>
+                        <input type="text" name="app_name" class="form-control" value="{{ settings.app_name }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Taux de commission (%)</label>
+                        <input type="number" name="commission_rate" class="form-control" step="0.1" value="{{ settings.commission_rate }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Montant minimum (HTG)</label>
+                        <input type="number" name="min_contribution" class="form-control" value="{{ settings.min_contribution }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Montant maximum (HTG)</label>
+                        <input type="number" name="max_contribution" class="form-control" value="{{ settings.max_contribution }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Email de contact</label>
+                        <input type="email" name="contact_email" class="form-control" value="{{ settings.contact_email }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Email de support</label>
+                        <input type="email" name="support_email" class="form-control" value="{{ settings.support_email }}">
+                    </div>
+                    <div class="col-12">
+                        <hr>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

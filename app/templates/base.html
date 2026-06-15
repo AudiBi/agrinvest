@@ -1,78 +1,601 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="light">
 <head>
     <meta charset="UTF-8" />
-    <title>{% block title %}Agri-Invest{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Bootstrap pour un design responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="AgriInvest Haïti - Plateforme de financement participatif pour l'agriculture haïtienne" />
+    <meta name="keywords" content="agriculture, investissement, Haïti, financement participatif, diaspora" />
+    <meta name="author" content="AgriInvest Haiti" />
+    <meta name="theme-color" content="#2E7D32" />
+    
+    <title>{% block title %}AgriInvest Haïti{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #2E7D32;
+            --primary-dark: #1B5E20;
+            --primary-light: #4CAF50;
+            --secondary-color: #FF9800;
+            --secondary-dark: #F57C00;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --box-shadow-hover: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            box-shadow: var(--box-shadow);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            margin-right: 8px;
+            font-size: 1.8rem;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: white;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 80%;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background: white;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow-hover);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .btn {
+            border-radius: 50px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+            border: none;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 10px;
+            background-color: #e9ecef;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #218838 100%);
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #e0a800 100%);
+            color: #000;
+        }
+
+        .alert {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .footer {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #23272b 100%);
+            color: white;
+            padding: 3rem 0 1rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: white;
+            transform: translateX(5px);
+            display: inline-block;
+        }
+
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+            .card-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow-hover);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .language-selector {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .language-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .language-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary-dark);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-5px);
+            background: var(--primary-dark);
+        }
+
+        [data-bs-theme="dark"] {
+            --light-color: #1a1a1a;
+            --dark-color: #ffffff;
+        }
+
+        .cookie-consent {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 1rem;
+            z-index: 9998;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .cookie-consent.show {
+            transform: translateY(0);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-<!-- Barre de navigation -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('main.home') }}">Agri-Invest</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav ms-auto">
-        {% if current_user.is_authenticated %}
-          <li class="nav-item">
-            <span class="nav-link">Bonjour {{ current_user.name }}</span>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.home') }}">Accueil</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.logout') }}">Déconnexion</a>
-          </li>
-        {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.login') }}">Connexion</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('main.register') }}">Inscription</a>
-          </li>
-        {% endif %}
-      </ul>
+<!-- Loading Spinner -->
+<div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Chargement...</span>
     </div>
-  </div>
+</div>
+
+<!-- Barre de navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('main.home') }}">
+            <i class="fas fa-seedling"></i>
+            AgriInvest <span style="font-weight: 300;">Haïti</span>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.home' %}active{% endif %}" href="{{ url_for('main.home') }}">
+                        <i class="fas fa-home"></i> Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.project_list' %}active{% endif %}" href="{{ url_for('main.project_list') }}">
+                        <i class="fas fa-tractor"></i> Projets
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.trainings' %}active{% endif %}" href="{{ url_for('main.trainings') }}">
+                        <i class="fas fa-graduation-cap"></i> Formations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}" href="{{ url_for('main.about') }}">
+                        <i class="fas fa-info-circle"></i> À propos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.contact' %}active{% endif %}" href="{{ url_for('main.contact') }}">
+                        <i class="fas fa-envelope"></i> Contact
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if current_user.avatar_url %}
+                                <img src="{{ current_user.avatar_url }}" class="rounded-circle me-1" width="30" height="30" alt="Avatar">
+                            {% else %}
+                                <i class="fas fa-user-circle fa-lg"></i>
+                            {% endif %}
+                            {{ current_user.name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('main.dashboard') }}"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><i class="fas fa-user"></i> Mon profil</a></li>
+                            {% if current_user.is_investor %}
+                            <li><a class="dropdown-item" href="{{ url_for('main.investor_dashboard') }}"><i class="fas fa-chart-line"></i> Mes investissements</a></li>
+                            {% endif %}
+                            {% if current_user.is_farmer %}
+                            <li><a class="dropdown-item" href="{{ url_for('main.farmer_dashboard') }}"><i class="fas fa-tractor"></i> Mes projets</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light me-2" href="{{ url_for('main.login') }}">Connexion</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-light" href="{{ url_for('main.register') }}">Inscription</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
 </nav>
 
+<!-- Espace pour navbar fixed-top -->
+<div style="height: 76px;"></div>
+
 <!-- Contenu principal -->
-<div class="container mt-4">
+<main class="container mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show fade-in" role="alert">
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-  <!-- Affichage des messages flash -->
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <div class="alert alert-info">
-        {% for message in messages %}
-          <p>{{ message }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
+    <div class="fade-in">
+        {% block content %}{% endblock %}
+    </div>
+</main>
 
-  <!-- Bloc pour les pages enfants -->
-  {% block content %}{% endblock %}
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <h5><i class="fas fa-seedling"></i> AgriInvest Haïti</h5>
+                <p class="mt-3">Plateforme de financement participatif dédiée à l'agriculture haïtienne. Ensemble, cultivons l'avenir d'Haïti.</p>
+                <div class="mt-3">
+                    <a href="#" class="me-2"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="me-2"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="me-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="me-2"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-md-2 mb-4">
+                <h6>Liens rapides</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.project_list') }}">Projets</a></li>
+                    <li><a href="{{ url_for('main.trainings') }}">Formations</a></li>
+                    <li><a href="{{ url_for('main.about') }}">À propos</a></li>
+                    <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <h6>Support</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.faq') }}">FAQ</a></li>
+                    <li><a href="{{ url_for('main.contact') }}">Nous contacter</a></li>
+                    <li><a href="{{ url_for('main.terms') }}">Conditions</a></li>
+                    <li><a href="{{ url_for('main.privacy') }}">Confidentialité</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <h6>Newsletter</h6>
+                <p>Recevez nos actualités</p>
+                <form action="{{ url_for('main.newsletter') }}" method="POST">
+                    <div class="input-group">
+                        <input type="email" name="email" class="form-control" placeholder="Votre email" required>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <hr class="mt-3" style="background-color: rgba(255,255,255,0.1);">
+        
+        <div class="row mt-3">
+            <div class="col text-center">
+                <p class="mb-0">&copy; 2024 AgriInvest Haïti. Tous droits réservés.</p>
+            </div>
+        </div>
+    </div>
+</footer>
 
+<!-- Language Selector -->
+<div class="language-selector">
+    <div class="dropdown">
+        <button class="btn language-btn" type="button" data-bs-toggle="dropdown">
+            <i class="fas fa-language"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#" data-lang="ht">🇭🇹 Kreyòl</a></li>
+            <li><a class="dropdown-item" href="#" data-lang="fr">🇫🇷 Français</a></li>
+            <li><a class="dropdown-item" href="#" data-lang="en">🇺🇸 English</a></li>
+        </ul>
+    </div>
 </div>
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
 
-    .card {
-        border-radius: 10px;
-    }
+<!-- Scroll to Top Button -->
+<button class="btn scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
 
-    .progress {
-        background-color: #e9ecef;
-    }
-</style>
+<!-- Cookie Consent -->
+<div class="cookie-consent" id="cookieConsent">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <p class="mb-0"><i class="fas fa-cookie-bite me-2"></i>Nous utilisons des cookies pour améliorer votre expérience.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-sm btn-primary" id="acceptCookies">Accepter</button>
+                <button class="btn btn-sm btn-secondary" id="declineCookies">Refuser</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
+<script>
+    AOS.init({ duration: 1000, once: true, offset: 100 });
+    
+    function showLoading() { $('#loadingSpinner').fadeIn(); }
+    function hideLoading() { $('#loadingSpinner').fadeOut(); }
+    
+    $(window).scroll(function() {
+        if ($(this).scrollTop() > 100) $('#scrollTop').fadeIn();
+        else $('#scrollTop').fadeOut();
+    });
+    
+    $('#scrollTop').click(function() { $('html, body').animate({scrollTop: 0}, 300); });
+    
+    if (!localStorage.getItem('cookieConsent')) {
+        setTimeout(function() { $('#cookieConsent').addClass('show'); }, 1000);
+    }
+    
+    $('#acceptCookies').click(function() {
+        localStorage.setItem('cookieConsent', 'accepted');
+        $('#cookieConsent').removeClass('show');
+    });
+    
+    $('#declineCookies').click(function() {
+        localStorage.setItem('cookieConsent', 'declined');
+        $('#cookieConsent').removeClass('show');
+    });
+    
+    $('[data-lang]').click(function(e) {
+        e.preventDefault();
+        var lang = $(this).data('lang');
+        $.ajax({
+            url: '{{ url_for("main.set_language") }}',
+            method: 'POST',
+            data: {language: lang},
+            success: function() { location.reload(); }
+        });
+    });
+    
+    setTimeout(function() { $('.alert').fadeOut('slow'); }, 5000);
+    
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+    
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(t) { return new bootstrap.Tooltip(t); });
+    
+    console.log('AgriInvest Haïti - Plateforme chargée');
+</script>
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>

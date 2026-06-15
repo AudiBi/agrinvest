@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Formations agricoles - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .training-card {
+        transition: all 0.3s;
+        height: 100%;
+        cursor: pointer;
+    }
+    .training-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .training-image {
+        height: 180px;
+        object-fit: cover;
+    }
+    .category-badge {
+        background: #E8F5E9;
+        color: #2E7D32;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+    }
+    .difficulty-badge {
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .difficulty-beginner { background: #28a745; color: white; }
+    .difficulty-intermediate { background: #ffc107; color: #000; }
+    .difficulty-advanced { background: #dc3545; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-success mb-3">
+            <i class="fas fa-graduation-cap me-2"></i>Formations agricoles
+        </h1>
+        <p class="lead">Apprenez les meilleures pratiques agricoles et développez vos compétences</p>
+    </div>
+
+    <!-- Filtres -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="btn-group flex-wrap">
+                <a href="{{ url_for('main.trainings') }}" 
+                   class="btn btn-sm btn-outline-success {% if not selected_category %}active{% endif %}">
+                    Toutes
+                </a>
+                {% for cat in categories %}
+                <a href="{{ url_for('main.trainings', category=cat) }}" 
+                   class="btn btn-sm btn-outline-success {% if selected_category == cat %}active{% endif %}">
+                    {{ cat }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="dropdown">
+                <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-language me-1"></i> Langue
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="?lang=ht">🇭🇹 Kreyòl</a></li>
+                    <li><a class="dropdown-item" href="?lang=fr">🇫🇷 Français</a></li>
+                    <li><a class="dropdown-item" href="?lang=en">🇺🇸 English</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille des formations -->
+    {% if trainings.items %}
+    <div class="row g-4">
+        {% for training in trainings.items %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card training-card h-100" 
+                 onclick="window.location.href='{{ url_for('main.training_detail', training_id=training.id) }}'">
+                <div class="position-relative">
+                    {% if training.thumbnail_url %}
+                    <img src="{{ training.thumbnail_url }}" class="card-img-top training-image" alt="{{ training.title_ht }}">
+                    {% else %}
+                    <div class="bg-light text-center py-4 training-image">
+                        <i class="fas fa-graduation-cap fa-4x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <span class="position-absolute top-0 end-0 m-2 category-badge">{{ training.category }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <span class="difficulty-badge difficulty-{{ training.difficulty_level }}">
+                            {% if training.difficulty_level == 'beginner' %}Débutant
+                            {% elif training.difficulty_level == 'intermediate' %}Intermédiaire
+                            {% else %}Avancé{% endif %}
+                        </span>
+                    </div>
+                    <h5 class="card-title">{{ training.title_ht }}</h5>
+                    <p class="card-text text-muted small">{{ training.description_ht|truncate(100) }}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ training.duration_minutes|default(30) }} min
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-download me-1"></i>{{ training.file_size_mb|default(5) }} MB
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <button class="btn btn-outline-success w-100">
+                        <i class="fas fa-play-circle me-2"></i>Commencer
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if trainings.pages > 1 %}
+    <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if trainings.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ trainings.prev_num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if language %}&lang={{ language }}{% endif %}">
+                    ← Précédent
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for p in trainings.iter_pages() %}
+                {% if p %}
+                    <li class="page-item {% if p == trainings.page %}active{% endif %}">
+                        <a class="page-link {% if p == trainings.page %}bg-success border-success{% endif %}" 
+                           href="?page={{ p }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if language %}&lang={{ language }}{% endif %}">
+                            {{ p }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if trainings.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ trainings.next_num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if language %}&lang={{ language }}{% endif %}">
+                    Suivant →
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5 bg-white rounded-4">
+        <i class="fas fa-graduation-cap fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Aucune formation disponible</h4>
+        <p class="text-muted">De nouvelles formations arrivent bientôt.</p>
+    </div>
+    {% endif %}
+
+    <!-- Section conseils -->
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-mobile-alt fa-3x text-success mb-3"></i>
+                    <h5>Accessible sur mobile</h5>
+                    <p class="small text-muted">Apprenez où que vous soyez, même avec une connexion limitée</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-download fa-3x text-success mb-3"></i>
+                    <h5>Contenus téléchargeables</h5>
+                    <p class="small text-muted">Téléchargez les formations pour les suivre hors ligne</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-certificate fa-3x text-success mb-3"></i>
+                    <h5>Certificat gratuit</h5>
+                    <p class="small text-muted">Obtenez un certificat à la fin de chaque formation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,401 @@
+# ============================================================================
+# Python
+# ============================================================================
+
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+__pycache__/
+
+# Virtual Environment
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.venv.bak/
+venv-*/
+pythonenv*
+
+# ============================================================================
+# Flask / Application
+# ============================================================================
+
+# Instance folder
+instance/
+.instance/
+webapp.instance/
+
+# Logs
+logs/
+*.log
+*.log.*
+*.out
+*.err
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db3
+*.sdb
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Migrations (garder les migrations mais pas les fichiers de cache)
+migrations/__pycache__/
+migrations/versions/__pycache__/
+migrations/*.pyc
+migrations/versions/*.pyc
+!migrations/versions/*.py
+!migrations/alembic.ini
+!migrations/env.py
+!migrations/script.py.mako
+migrations/README
+
+# Uploads
+static/uploads/
+uploads/
+app/static/uploads/
+media/
+files/
+temp/
+
+# ============================================================================
+# IDE / Éditeurs
+# ============================================================================
+
+# VS Code
+.vscode/
+.history/
+*.code-workspace
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# PyCharm / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+out/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dataSources.local.xml
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+.sublime/
+
+# Atom
+.atom/
+*.atom
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Vim
+*.swp
+*.swo
+*.swn
+*.un~
+Session.vim
+.netrwhist
+
+# ============================================================================
+# Environnement et variables
+# ============================================================================
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+.flaskenv
+.envrc
+.env.backup
+.env.*
+
+# Configuration secrets
+config_secret.py
+secrets.py
+credentials.json
+*.key
+*.pem
+*.crt
+*.p12
+*.der
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+# Coverage
+.coverage
+.coverage.*
+.coverage.*.py
+.coverage.*.pycharm
+.coverage.*.pytest
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.tox/
+nosetests.xml
+htmlcov/
+.tox/
+.tox/*
+
+# ============================================================================
+# Frontend et assets
+# ============================================================================
+
+# Node / NPM
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+.bowerrc
+bower_components/
+.eslintcache
+.stylelintcache
+
+# CSS / JS builds
+*.min.css
+*.min.js
+*.bundle.js
+*.bundle.css
+dist/
+build/
+assets/dist/
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+*.pid
+docker-compose.override.yml
+.dockerignore
+docker-compose.*.yml
+!.docker-compose.yml
+Dockerfile.dev
+
+# ============================================================================
+# OS fichiers système
+# ============================================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msu
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.AppleDB
+.AppleDesktop
+*.AppleDouble
+*.AppleDesktop
+*.DS_Store
+*.Spotlight-V100
+*.Trashes
+*.fseventsd
+*.appledouble
+*.appledesktop
+*.dstore
+*.localized
+
+# Linux
+.directory
+*.orig
+*.rej
+*~
+*.bak
+*.old
+*.swp
+*.tmp
+
+# ============================================================================
+# Cache fichiers
+# ============================================================================
+
+*.cache
+*.pycache
+*.sass-cache
+*.scssc
+*.cssc
+*.min
+*.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+*.tar
+*.bz2
+*.xz
+*.lzma
+
+# ============================================================================
+# Backup fichiers
+# ============================================================================
+
+*.backup
+*.bk
+*.bkp
+*.bak
+*.old
+*.orig
+*.tmp
+*.temp
+*.save
+
+# ============================================================================
+# Fichiers spécifiques au projet
+# ============================================================================
+
+# Fichiers de configuration locale
+config.local.py
+settings_local.py
+local_settings.py
+.development_config
+.production_config
+
+# Fichiers de logs spécifiques
+gunicorn.log
+uwsgi.log
+celery.log
+celery-beat.log
+flower.log
+
+# Cache Redis
+dump.rdb
+appendonly.aof
+
+# Fichiers de session
+flask_session/
+sessions/
+.sessions/
+
+# Fichiers de données sensibles
+*.pkl
+*.pickle
+secret_key.txt
+private_key.txt
+public_key.txt
+
+# ============================================================================
+# Documentation (garder les docs sources mais pas les builds)
+# ============================================================================
+
+docs/_build/
+docs/build/
+site/
+_site/
+.docusaurus/
+
+# ============================================================================
+# Profiling
+# ============================================================================
+
+prof/
+profile/
+*.prof
+*.pstats
+*.lprof
+
+# ============================================================================
+# Notebooks
+# ============================================================================
+
+.ipynb_checkpoints/
+*.ipynb
+!.devcontainer/notebooks/*.ipynb
+
+# ============================================================================
+# Media
+# ============================================================================
+
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+
+# ============================================================================
+# Fichiers temporaires de l'application
+# ============================================================================
+
+# Fichiers d'upload temporaires
+tmp/
+temp/
+*.tmp
+*.temp
+celerybeat-schedule
+celerybeat.pid
+
+# ============================================================================
+# Exception - Dossiers à garder
+# ============================================================================
+
+# Garder le dossier vide uploads
+!.gitkeep
+!static/uploads/.gitkeep
+!uploads/.gitkeep
+!app/static/uploads/.gitkeep
+
+# Garder les logs vides
+!logs/.gitkeep
+
+# Garder le dossier instance
+!instance/.gitkeep

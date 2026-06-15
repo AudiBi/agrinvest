@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des utilisateurs - Administration{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-success">
+            <i class="fas fa-users me-2"></i>Gestion des utilisateurs
+        </h1>
+        <div class="btn-group">
+            <a href="?status=all" class="btn btn-outline-success {% if selected_status == 'all' %}active{% endif %}">Tous</a>
+            <a href="?status=active" class="btn btn-outline-success {% if selected_status == 'active' %}active{% endif %}">Actifs</a>
+            <a href="?status=inactive" class="btn btn-outline-success {% if selected_status == 'inactive' %}active{% endif %}">Inactifs</a>
+            <a href="?status=verified" class="btn btn-outline-success {% if selected_status == 'verified' %}active{% endif %}">Vérifiés</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users.items %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if user.role == 'investor' else 'primary' }}">
+                                    {{ user.role }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactif</span>
+                                {% endif %}
+                                {% if user.is_verified %}
+                                    <span class="badge bg-info">Vérifié</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at|format_date }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-{{ 'danger' if user.is_active else 'success' }}">
+                                            <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if users.pages > 1 %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if users.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page={{ users.prev_num }}&status={{ selected_status }}">Précédent</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link bg-success border-success">{{ users.page }}</span></li>
+                    {% if users.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ users.next_num }}&status={{ selected_status }}">Suivant</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

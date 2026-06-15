@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Détail projet - {{ project.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .project-header {
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .info-label {
+        font-weight: 600;
+        color: #2E7D32;
+        width: 150px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="project-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="fas fa-tractor me-2"></i>{{ project.title }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-user me-1"></i>{{ project.farmer.name }}
+                    | <i class="fas fa-map-marker-alt me-1"></i>{{ project.location|default('Haïti') }}
+                </p>
+            </div>
+            <div class="text-end">
+                <div class="btn-group">
+                    {% if project.status == 'pending' %}
+                    <form method="POST" action="{{ url_for('admin.approve_project', project_id=project.id) }}" class="d-inline me-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-1"></i>Approuver
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.reject_project', project_id=project.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-times me-1"></i>Rejeter
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('admin.feature_project', project_id=project.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-star me-1"></i>
+                            {{ 'Retirer de la une' if project.is_featured else 'Mettre à la une' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-info-circle me-2"></i>Informations générales
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Statut :</span>
+                    <span class="badge bg-{{ 'success' if project.status == 'published' else 'warning' if project.status == 'pending' else 'info' }}">
+                        {{ project.status }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Catégorie :</span>
+                    {{ project.category or 'Non spécifiée' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Département :</span>
+                    {{ project.department or 'Non spécifié' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Commune :</span>
+                    {{ project.commune or 'Non spécifiée' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Date limite :</span>
+                    {{ project.deadline|format_date or 'Non définie' }}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-chart-line me-2"></i>Financement
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Objectif :</span>
+                    <strong>{{ "{:,.0f}".format(project.amount_needed).replace(",", " ") }} HTG</strong>
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Collecté :</span>
+                    <strong class="text-success">{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }} HTG</strong>
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Progression :</span>
+                    <div class="progress" style="width: 200px; display: inline-block;">
+                        <div class="progress-bar bg-success" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                    <span class="ms-2">{{ project.progress_percentage }}%</span>
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Investisseurs :</span>
+                    {{ project.investor_count }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-align-left me-2"></i>Description
+        </h5>
+        <p>{{ project.description }}</p>
+    </div>
+
+    <!-- Contributions -->
+    {% if contributions %}
+    <div class="info-card">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-hand-holding-heart me-2"></i>Contributions
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Investisseur</th>
+                        <th>Montant</th>
+                        <th>Date</th>
+                        <th>Pays</th>
+                        <th>Anonyme</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrib in contributions %}
+                    <tr>
+                        <td>
+                            {% if contrib.is_anonymous %}
+                            Anonyme
+                            {% else %}
+                            {{ contrib.investor.name }}
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-success">{{ "{:,.0f}".format(contrib.amount).replace(",", " ") }} {{ contrib.currency }}</td>
+                        <td>{{ contrib.created_at|format_datetime }}</td>
+                        <td>{{ contrib.investor_country or 'HT' }}</td>
+                        <td>{{ 'Oui' if contrib.is_anonymous else 'Non' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between mt-3">
+        <a href="{{ url_for('admin.projects') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+        <form method="POST" action="{{ url_for('admin.delete_project', project_id=project.id) }}"
+              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.')">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash-alt me-2"></i>Supprimer le projet
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon profil - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        border: 3px solid white;
+    }
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .info-label {
+        font-weight: 600;
+        color: #2E7D32;
+        width: 140px;
+        display: inline-block;
+    }
+    .danger-zone {
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 16px;
+        padding: 25px;
+    }
+    .danger-zone h5 {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- En-tête -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center text-md-start">
+                {% if current_user.avatar_url %}
+                    <img src="{{ current_user.avatar_url }}" class="avatar-preview" alt="{{ current_user.name }}">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <h1 class="display-5 fw-bold mb-2">{{ current_user.name }}</h1>
+                <p class="mb-2">
+                    <i class="fas fa-envelope me-2"></i>{{ current_user.email }}
+                </p>
+                {% if current_user.phone %}
+                <p class="mb-2">
+                    <i class="fas fa-phone me-2"></i>{{ current_user.phone }}
+                </p>
+                {% endif %}
+                <p class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Membre depuis {{ current_user.created_at|format_date }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire de modification -->
+        <div class="col-lg-8">
+            <form method="POST" enctype="multipart/form-data" class="info-card">
+                <h4 class="text-success mb-4">
+                    <i class="fas fa-edit me-2"></i>Modifier mon profil
+                </h4>
+
+                <div class="mb-3">
+                    <label class="form-label">Photo de profil</label>
+                    <input type="file" name="avatar" class="form-control" accept="image/*">
+                    <small class="text-muted">Formats acceptés : JPG, PNG, GIF (max 5MB)</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nom complet</label>
+                    <input type="text" name="name" class="form-control" value="{{ current_user.name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" name="phone" class="form-control" value="{{ current_user.phone or '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Localisation</label>
+                    <input type="text" name="location" class="form-control" value="{{ current_user.location or '' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Bio</label>
+                    <textarea name="bio" class="form-control" rows="4">{{ current_user.bio or '' }}</textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Devise préférée</label>
+                        <select name="preferred_currency" class="form-select">
+                            <option value="HTG" {% if current_user.preferred_currency == 'HTG' %}selected{% endif %}>HTG - Gourde haïtienne</option>
+                            <option value="USD" {% if current_user.preferred_currency == 'USD' %}selected{% endif %}>USD - Dollar américain</option>
+                            <option value="EUR" {% if current_user.preferred_currency == 'EUR' %}selected{% endif %}>EUR - Euro</option>
+                            <option value="CAD" {% if current_user.preferred_currency == 'CAD' %}selected{% endif %}>CAD - Dollar canadien</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Langue préférée</label>
+                        <select name="preferred_language" class="form-select">
+                            <option value="ht" {% if current_user.preferred_language == 'ht' %}selected{% endif %}>Kreyòl</option>
+                            <option value="fr" {% if current_user.preferred_language == 'fr' %}selected{% endif %}>Français</option>
+                            <option value="en" {% if current_user.preferred_language == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                    </button>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Informations complémentaires -->
+        <div class="col-lg-4">
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-chart-line me-2"></i>Statistiques
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Rôle :</span>
+                    <span class="badge bg-{{ 'success' if current_user.is_farmer else 'primary' }}">
+                        {{ 'Agriculteur' if current_user.is_farmer else 'Investisseur' }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Statut :</span>
+                    {% if current_user.is_verified %}
+                        <span class="badge bg-success">Vérifié</span>
+                    {% else %}
+                        <span class="badge bg-warning">En attente</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">ID utilisateur :</span>
+                    {{ current_user.id }}
+                </div>
+            </div>
+
+            <!-- Changer le mot de passe -->
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-lock me-2"></i>Changer le mot de passe
+                </h5>
+                <form method="POST" action="{{ url_for('auth.change_password') }}">
+                    <div class="mb-3">
+                        <input type="password" name="current_password" class="form-control" placeholder="Mot de passe actuel" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" name="new_password" class="form-control" placeholder="Nouveau mot de passe" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirmer le nouveau mot de passe" required>
+                    </div>
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="fas fa-key me-2"></i>Changer le mot de passe
+                    </button>
+                </form>
+            </div>
+
+            <!-- Zone dangereuse -->
+            <div class="danger-zone">
+                <h5>
+                    <i class="fas fa-exclamation-triangle me-2"></i>Zone dangereuse
+                </h5>
+                <p class="small text-muted">Supprimer définitivement votre compte. Cette action est irréversible.</p>
+                <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                    <i class="fas fa-trash-alt me-2"></i>Supprimer mon compte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmation de suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous absolument sûr de vouloir supprimer votre compte ?</p>
+                <p class="text-danger small">
+                    <i class="fas fa-warning me-1"></i>
+                    Cette action est irréversible. Toutes vos données seront définitivement perdues.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="POST" action="{{ url_for('main.delete_account') }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Oui, supprimer mon compte
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Aperçu de l'avatar avant upload
+    document.querySelector('input[name="avatar"]')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const avatar = document.querySelector('.avatar-preview');
+                if (avatar) {
+                    avatar.src = event.target.result;
+                } else {
+                    const placeholder = document.querySelector('.avatar-placeholder');
+                    if (placeholder) {
+                        placeholder.innerHTML = `<img src="${event.target.result}" class="avatar-preview">`;
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

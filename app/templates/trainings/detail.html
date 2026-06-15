@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ training.title_ht }} - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .video-container iframe,
+    .video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .progress-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: conic-gradient(#2E7D32 0deg, #e9ecef 0deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .progress-text {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2E7D32;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Lecteur vidéo/audio -->
+            <div class="video-container">
+                {% if training.content_type == 'video_low' %}
+                <video controls poster="{{ training.thumbnail_url }}">
+                    <source src="{{ training.content_url }}" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                </video>
+                {% elif training.content_type == 'audio' %}
+                <audio controls style="width: 100%; margin-top: 50px;">
+                    <source src="{{ training.content_url }}" type="audio/mpeg">
+                    Votre navigateur ne supporte pas la lecture audio.
+                </audio>
+                {% else %}
+                <div class="bg-light text-center py-5">
+                    <i class="fas fa-file-alt fa-5x text-muted"></i>
+                    <p class="mt-3">Contenu textuel disponible</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <h1 class="text-success mb-3">{{ training.title_ht }}</h1>
+            <div class="mb-4">
+                <span class="badge bg-success me-2">{{ training.category }}</span>
+                <span class="badge bg-secondary">
+                    {% if training.difficulty_level == 'beginner' %}Débutant
+                    {% elif training.difficulty_level == 'intermediate' %}Intermédiaire
+                    {% else %}Avancé{% endif %}
+                </span>
+            </div>
+            <p>{{ training.description_ht }}</p>
+
+            <!-- Téléchargement -->
+            {% if training.is_downloadable %}
+            <div class="alert alert-info">
+                <i class="fas fa-download me-2"></i>
+                <a href="{{ training.content_url }}" download class="text-success">Télécharger cette formation</a>
+                <small class="text-muted d-block">Version hors ligne disponible ({{ training.file_size_mb|default(5) }} MB)</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Progression -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Votre progression</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if progress %}
+                        <div class="progress-circle" id="progressCircle">
+                            <div class="progress-text">{{ progress.progress_percentage }}%</div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ progress.progress_percentage }}%"></div>
+                            </div>
+                        </div>
+                        {% if progress.status == 'completed' %}
+                            <div class="alert alert-success mt-3">
+                                <i class="fas fa-check-circle me-2"></i>Formation complétée !
+                            </div>
+                            <button class="btn btn-outline-success w-100" onclick="generateCertificate()">
+                                <i class="fas fa-certificate me-2"></i>Télécharger le certificat
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted">Connectez-vous pour suivre votre progression</p>
+                        <a href="{{ url_for('main.login') }}" class="btn btn-success w-100">Se connecter</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informations -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Informations</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-clock text-success me-2"></i>
+                            Durée: {{ training.duration_minutes|default(30) }} minutes
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-database text-success me-2"></i>
+                            Taille: {{ training.file_size_mb|default(5) }} MB
+                        </li>
+                        <li>
+                            <i class="fas fa-globe text-success me-2"></i>
+                            Disponible hors ligne
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateProgress(percentage) {
+    const circle = document.getElementById('progressCircle');
+    if (circle) {
+        const angle = (percentage / 100) * 360;
+        circle.style.background = `conic-gradient(#2E7D32 ${angle}deg, #e9ecef 0deg)`;
+        document.querySelector('.progress-text').innerHTML = percentage + '%';
+    }
+}
+
+function generateCertificate() {
+    alert('Certificat en cours de génération...');
+}
+
+// Sauvegarde de la progression
+const video = document.querySelector('video');
+if (video) {
+    video.addEventListener('timeupdate', function() {
+        const progress = (video.currentTime / video.duration) * 100;
+        if (progress % 10 < 1) {
+            fetch('{{ url_for("main.update_training_progress", training_id=training.id) }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    progress_percentage: Math.floor(progress),
+                    last_position_seconds: Math.floor(video.currentTime)
+                })
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

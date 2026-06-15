@@ -1,12 +1,737 @@
 {% extends 'base.html' %}
-{% block title %}Connexion{% endblock %}
+
+{% block title %}Connexion - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Section hero */
+    .login-hero {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%);
+        padding: 60px 0;
+        margin-bottom: -60px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-hero::before {
+        content: "🌱";
+        position: absolute;
+        bottom: -20px;
+        left: -20px;
+        font-size: 150px;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+    }
+    
+    .login-hero::after {
+        content: "🌾";
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        font-size: 150px;
+        opacity: 0.1;
+        transform: rotate(15deg);
+    }
+    
+    .login-hero h1 {
+        font-size: 42px;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 10px;
+        animation: fadeInDown 0.6s ease-out;
+    }
+    
+    .login-hero p {
+        color: rgba(255,255,255,0.9);
+        font-size: 18px;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    /* Carte de connexion */
+    .login-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        padding: 40px;
+        margin-bottom: 40px;
+        transition: transform 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .login-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .form-label i {
+        margin-right: 8px;
+        color: #2E7D32;
+    }
+    
+    .input-group-custom {
+        position: relative;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #2E7D32;
+        z-index: 10;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 12px 15px 12px 45px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2E7D32;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+    }
+    
+    .form-control-custom.error {
+        border-color: #dc3545;
+    }
+    
+    /* Options */
+    .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #4a5568;
+    }
+    
+    .checkbox-label input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #2E7D32;
+    }
+    
+    .forgot-link {
+        color: #2E7D32;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .forgot-link:hover {
+        color: #1B5E20;
+        text-decoration: underline;
+    }
+    
+    /* Bouton */
+    .btn-login {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(46,125,50,0.3);
+    }
+    
+    .btn-login:active {
+        transform: translateY(0);
+    }
+    
+    .btn-login i {
+        margin-right: 8px;
+    }
+    
+    /* Séparation */
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 25px 0;
+    }
+    
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .divider span {
+        padding: 0 15px;
+        color: #a0aec0;
+        font-size: 14px;
+    }
+    
+    /* Connexion sociale */
+    .social-login {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 25px;
+    }
+    
+    .social-btn {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .social-btn:hover {
+        transform: translateY(-2px);
+        border-color: #2E7D32;
+        background: #f8f9fa;
+    }
+    
+    .social-btn.google {
+        color: #DB4437;
+    }
+    
+    .social-btn.google:hover {
+        background: #DB4437;
+        border-color: #DB4437;
+        color: white;
+    }
+    
+    .social-btn.facebook {
+        color: #4267B2;
+    }
+    
+    .social-btn.facebook:hover {
+        background: #4267B2;
+        border-color: #4267B2;
+        color: white;
+    }
+    
+    /* Inscription */
+    .signup-prompt {
+        text-align: center;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .signup-prompt p {
+        color: #4a5568;
+        margin-bottom: 15px;
+    }
+    
+    .btn-signup {
+        display: inline-block;
+        padding: 12px 24px;
+        background: transparent;
+        border: 2px solid #2E7D32;
+        color: #2E7D32;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-signup:hover {
+        background: #2E7D32;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    /* Messages */
+    .alert-custom {
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    .alert-custom.alert-danger {
+        background: #fee2e2;
+        border-left: 4px solid #dc3545;
+        color: #dc3545;
+    }
+    
+    .alert-custom.alert-success {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        color: #155724;
+    }
+    
+    .alert-custom.alert-info {
+        background: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        color: #0c5460;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+    }
+    
+    /* Animations */
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-hero h1 {
+            font-size: 32px;
+        }
+        
+        .login-hero p {
+            font-size: 16px;
+        }
+        
+        .login-card {
+            padding: 25px;
+        }
+        
+        .social-login {
+            flex-direction: column;
+        }
+        
+        .form-options {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    
+    /* Particles background */
+    .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+    }
+    
+    .particle {
+        position: absolute;
+        background: rgba(46,125,50,0.1);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: float 20s infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg);
+        }
+        50% {
+            transform: translateY(-20px) rotate(180deg);
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Connexion</h1>
-<form method="POST">
-    <label>Email</label><br>
-    <input type="email" name="email" required><br>
-    <label>Mot de passe</label><br>
-    <input type="password" name="password" required><br><br>
-    <button type="submit">Se connecter</button>
-</form>
+<!-- Hero section -->
+<div class="login-hero">
+    <div class="container text-center">
+        <h1>
+            <i class="fas fa-leaf me-2"></i>
+            Bienvenue sur AgriInvest Haïti
+        </h1>
+        <p>Connectez-vous pour accéder à votre espace personnel et soutenir l'agriculture haïtienne</p>
+    </div>
+</div>
+
+<div class="container" style="margin-top: -40px;">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="login-card">
+                <!-- Formulaire de connexion -->
+                <form method="POST" action="{{ url_for('main.login') }}" id="loginFormElement">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                    
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            Adresse email
+                        </label>
+                        <div class="input-group-custom">
+                            <span class="input-icon">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <input type="email" 
+                                   class="form-control-custom" 
+                                   name="email" 
+                                   id="email"
+                                   placeholder="exemple@agrinvest.ht"
+                                   required
+                                   autocomplete="email"
+                                   autofocus>
+                        </div>
+                        <div class="invalid-feedback" id="emailError" style="display: none;">
+                            Veuillez saisir une adresse email valide
+                        </div>
+                    </div>
+
+                    <!-- Mot de passe -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Mot de passe
+                        </label>
+                        <div class="input-group-custom">
+                            <span class="input-icon">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" 
+                                   class="form-control-custom" 
+                                   name="password" 
+                                   id="password"
+                                   placeholder="••••••••"
+                                   required
+                                   autocomplete="current-password">
+                            <button type="button" 
+                                    class="btn-toggle-password" 
+                                    style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #6c757d;"
+                                    onclick="togglePassword()">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback" id="passwordError" style="display: none;">
+                            Veuillez saisir votre mot de passe
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember" id="remember">
+                            <span>Se souvenir de moi</span>
+                        </label>
+                        <a href="{{ url_for('main.forgot_password') }}" class="forgot-link">
+                            <i class="fas fa-key me-1"></i>Mot de passe oublié ?
+                        </a>
+                    </div>
+
+                    <!-- Bouton connexion -->
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Se connecter</span>
+                    </button>
+                </form>
+
+                <!-- Séparateur -->
+                <div class="divider">
+                    <span>ou</span>
+                </div>
+
+                <!-- Connexion sociale -->
+                <div class="social-login">
+                    <button type="button" class="social-btn google" onclick="socialLogin('google')">
+                        <i class="fab fa-google fa-lg"></i>
+                        Google
+                    </button>
+                    <button type="button" class="social-btn facebook" onclick="socialLogin('facebook')">
+                        <i class="fab fa-facebook-f fa-lg"></i>
+                        Facebook
+                    </button>
+                </div>
+
+                <!-- Lien inscription -->
+                <div class="signup-prompt">
+                    <p>Vous n'avez pas encore de compte ?</p>
+                    <a href="{{ url_for('main.register') }}" class="btn-signup">
+                        <i class="fas fa-user-plus me-2"></i>Créer un compte gratuitement
+                    </a>
+                </div>
+            </div>
+
+            <!-- Message de sécurité -->
+            <div class="text-center mt-4">
+                <p class="small text-muted">
+                    <i class="fas fa-shield-alt me-1 text-success"></i>
+                    Connexion sécurisée - Vos données sont protégées
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading spinner -->
+<div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+</div>
+
+<!-- Particles background -->
+<div class="particles" id="particles"></div>
+
+<script>
+    // Toggle mot de passe
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    // Connexion sociale
+    function socialLogin(provider) {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        // Rediriger vers la route de connexion sociale
+        window.location.href = "{{ url_for('main.social_login') }}?provider=" + provider;
+    }
+    
+    // Validation du formulaire
+    const form = document.getElementById('loginFormElement');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+            
+            // Validation email
+            const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+            if (!email.value.trim()) {
+                email.classList.add('error');
+                if (emailError) emailError.style.display = 'block';
+                isValid = false;
+            } else if (!emailRegex.test(email.value)) {
+                email.classList.add('error');
+                if (emailError) {
+                    emailError.style.display = 'block';
+                    emailError.textContent = 'Veuillez saisir une adresse email valide';
+                }
+                isValid = false;
+            } else {
+                email.classList.remove('error');
+                if (emailError) emailError.style.display = 'none';
+            }
+            
+            // Validation mot de passe
+            if (!password.value.trim()) {
+                password.classList.add('error');
+                if (passwordError) passwordError.style.display = 'block';
+                isValid = false;
+            } else {
+                password.classList.remove('error');
+                if (passwordError) passwordError.style.display = 'none';
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                showNotification('Veuillez corriger les erreurs du formulaire', 'danger');
+            } else {
+                document.getElementById('loadingSpinner').style.display = 'block';
+            }
+        });
+    }
+    
+    // Notification toast
+    function showNotification(message, type = 'info') {
+        const toastHtml = `
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+                <div class="toast align-items-center text-white bg-${type === 'danger' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0 show" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'danger' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(toastHtml);
+        setTimeout(() => {
+            $('.toast').last().remove();
+        }, 5000);
+    }
+    
+    // Particles génération
+    function generateParticles() {
+        const particlesContainer = document.getElementById('particles');
+        if (!particlesContainer) return;
+        
+        const particleCount = 50;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            const size = Math.random() * 10 + 5;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animationDelay = `${Math.random() * 20}s`;
+            particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
+            particlesContainer.appendChild(particle);
+        }
+    }
+    
+    // Auto-fill demo (à supprimer en production)
+    function demoFill() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('demo') === 'true') {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            if (emailInput) emailInput.value = 'demo@agrinvest.ht';
+            if (passwordInput) passwordInput.value = 'demo1234';
+            showNotification('Formulaire rempli avec les identifiants de démonstration', 'info');
+        }
+    }
+    
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        generateParticles();
+        demoFill();
+        
+        // Vérifier si des messages flash existent
+        const flashMessages = {{ get_flashed_messages(with_categories=true)|tojson }};
+        if (flashMessages && flashMessages.length > 0) {
+            for (const [category, message] of flashMessages) {
+                showNotification(message, category === 'danger' ? 'danger' : 'info');
+            }
+        }
+        
+        // Animation des champs
+        const inputs = document.querySelectorAll('.form-control-custom');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.01)';
+            });
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    });
+    
+    // Gestion du Enter key
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
+            }
+        });
+    }
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Si des paramètres d'erreur sont présents dans l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('error') === 'invalid') {
+        showNotification('Email ou mot de passe incorrect. Veuillez réessayer.', 'danger');
+    } else if (urlParams.get('registered') === 'success') {
+        showNotification('Inscription réussie ! Vous pouvez maintenant vous connecter.', 'success');
+    } else if (urlParams.get('reset') === 'success') {
+        showNotification('Votre mot de passe a été réinitialisé. Connectez-vous avec votre nouveau mot de passe.', 'success');
+    }
+</script>
 {% endblock %}
