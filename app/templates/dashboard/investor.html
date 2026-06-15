@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Investisseur - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        height: 100%;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .stat-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--primary-color);
+    }
+    .project-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        border-left: 4px solid var(--primary-color);
+    }
+    .project-card:hover {
+        transform: translateX(5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .impact-footer {
+        background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h1 class="display-5 fw-bold text-success mb-2">
+                <i class="fas fa-chart-line me-2"></i>Bonjour, {{ current_user.name }} !
+            </h1>
+            <p class="text-muted">Suivez vos investissements et leur impact sur l'agriculture haïtienne</p>
+        </div>
+        <div>
+            <a href="{{ url_for('main.project_list') }}" class="btn btn-success shadow-sm">
+                <i class="fas fa-search me-2"></i>Explorer les projets
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-value">{{ "{:,.0f}".format(total_invested).replace(",", " ") }} HTG</div>
+                <div class="text-muted">Total investi</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-value">{{ projects_invested|length }}</div>
+                <div class="text-muted">Projets soutenus</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-value">{{ contributions.total }}</div>
+                <div class="text-muted">Contributions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique d'évolution -->
+    {% if monthly_data %}
+    <div class="chart-container">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-chart-line me-2"></i>Évolution de vos investissements
+        </h5>
+        <canvas id="investmentChart" height="100"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Projets soutenus -->
+    {% if projects_invested %}
+    <h4 class="mb-3 text-success">
+        <i class="fas fa-tractor me-2"></i>Mes projets soutenus
+    </h4>
+    {% for project_data in projects_invested %}
+    <div class="project-card">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h5 class="text-success mb-1">{{ project_data.Project.title }}</h5>
+                <small class="text-muted">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ project_data.Project.location|default('Haïti') }}
+                </small>
+            </div>
+            <div class="col-md-3">
+                <div class="fw-bold text-success">{{ "{:,.0f}".format(project_data.total_invested|float).replace(",", " ") }} HTG</div>
+                <small>investis</small>
+            </div>
+            <div class="col-md-3">
+                <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-success" style="width: {{ project_data.Project.progress_percentage }}%"></div>
+                </div>
+                <small class="text-muted">{{ project_data.Project.progress_percentage }}% atteint</small>
+            </div>
+            <div class="col-md-2 text-end">
+                <a href="{{ url_for('main.project_detail', project_id=project_data.Project.id) }}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-eye"></i> Voir
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Filtres -->
+    <div class="filter-bar">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Projet</label>
+                <select name="project_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tous --</option>
+                    {% for p in all_projects %}
+                    <option value="{{ p.id }}" {% if selected_project == p.id %}selected{% endif %}>{{ p.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Statut</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tous --</option>
+                    <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Confirmés</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>En attente</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Date</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('main.investor_dashboard') }}" class="btn btn-secondary w-100">Réinitialiser</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tableau des contributions -->
+    <h4 class="mb-3 text-success">
+        <i class="fas fa-list me-2"></i>Historique des contributions
+    </h4>
+
+    {% if contributions.items %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Projet</th>
+                    <th>Montant</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th>Contrat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contributions.items %}
+                <tr>
+                    <td>
+                        <strong>{{ c.project.title }}</strong><br>
+                        <small class="text-muted">{{ c.project.location|default('Haïti') }}</small>
+                    </td>
+                    <td class="fw-bold text-success">{{ "{:,.0f}".format(c.amount).replace(",", " ") }} {{ c.currency }}</td>
+                    <td>{{ c.created_at|format_datetime }}</td>
+                    <td>
+                        {% if c.status == 'completed' %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Confirmé</span>
+                        {% elif c.status == 'pending' %}
+                            <span class="badge bg-warning"><i class="fas fa-clock"></i> En attente</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ c.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('main.download_contract', contribution_id=c.id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if contributions.pages > 1 %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if contributions.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ contributions.prev_num }}&project_id={{ selected_project }}&status={{ selected_status }}&date_from={{ date_from }}">
+                    ← Précédent
+                </a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link bg-success border-success">{{ contributions.page }}</span>
+            </li>
+            
+            {% if contributions.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ contributions.next_num }}&project_id={{ selected_project }}&status={{ selected_status }}&date_from={{ date_from }}">
+                    Suivant →
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Impact -->
+    <div class="impact-footer">
+        <h5 class="text-center text-success mb-3">
+            <i class="fas fa-globe-americas me-2"></i>Votre impact sur l'agriculture haïtienne
+        </h5>
+        <div class="row text-center">
+            <div class="col-4">
+                <div class="h3 text-success mb-0">{{ total_jobs|default(0) }}</div>
+                <small>Emplois créés</small>
+            </div>
+            <div class="col-4">
+                <div class="h3 text-success mb-0">{{ total_farmers|default(0) }}</div>
+                <small>Agriculteurs aidés</small>
+            </div>
+            <div class="col-4">
+                <div class="h3 text-success mb-0">{{ total_co2|default(0) }} kg</div>
+                <small>CO₂ réduit</small>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5 bg-white rounded-4">
+        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Aucune contribution trouvée</h4>
+        <p class="text-muted">Commencez à investir dans des projets agricoles</p>
+        <a href="{{ url_for('main.project_list') }}" class="btn btn-success mt-3">
+            <i class="fas fa-search me-2"></i>Explorer les projets
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Section recommandations -->
+    {% if recommended_projects %}
+    <div class="mt-5">
+        <h4 class="text-success mb-3">
+            <i class="fas fa-star me-2"></i>Projets recommandés pour vous
+        </h4>
+        <div class="row g-4">
+            {% for project in recommended_projects[:3] %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title text-success">{{ project.title }}</h6>
+                        <p class="card-text small">{{ project.short_description|truncate(80) }}</p>
+                        <div class="progress mb-2" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: {{ project.progress_percentage }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }} HTG</span>
+                            <span>{{ project.progress_percentage }}%</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-success w-100">
+                            <i class="fas fa-hand-holding-heart"></i> Investir
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Graphique d'évolution des investissements
+    {% if monthly_data %}
+    const ctx = document.getElementById('investmentChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for m in monthly_data %}'{{ m.month }}',{% endfor %}],
+            datasets: [{
+                label: 'Montant investi (HTG)',
+                data: [{% for m in monthly_data %}{{ m.amount }},{% endfor %}],
+                borderColor: '#2E7D32',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#2E7D32',
+                pointBorderColor: '#fff',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.toLocaleString() + ' HTG';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' HTG';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

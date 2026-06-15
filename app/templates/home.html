@@ -1,242 +1,1026 @@
 {% extends 'base.html' %}
-{% block title %}Accueil{% endblock %}
+
+{% block title %}AgriInvest Haïti - Investissez dans l'agriculture haïtienne{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero section */
+    .hero-section {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%);
+        color: white;
+        padding: 80px 0;
+        margin-bottom: 50px;
+        border-radius: 0 0 50px 50px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: "🌱";
+        position: absolute;
+        bottom: -30px;
+        left: -30px;
+        font-size: 200px;
+        opacity: 0.1;
+        transform: rotate(-15deg);
+    }
+    
+    .hero-section::after {
+        content: "🌾";
+        position: absolute;
+        top: -30px;
+        right: -30px;
+        font-size: 200px;
+        opacity: 0.1;
+        transform: rotate(15deg);
+    }
+    
+    .hero-title {
+        font-size: 48px;
+        font-weight: 800;
+        margin-bottom: 20px;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .hero-subtitle {
+        font-size: 20px;
+        margin-bottom: 30px;
+        opacity: 0.95;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+    
+    .hero-buttons {
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+    
+    .hero-stats {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 50px;
+        flex-wrap: wrap;
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+    
+    .hero-stat {
+        text-align: center;
+    }
+    
+    .hero-stat-value {
+        font-size: 36px;
+        font-weight: 800;
+    }
+    
+    .hero-stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+    
+    /* Section impact */
+    .impact-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .impact-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .impact-icon {
+        font-size: 48px;
+        color: #2E7D32;
+        margin-bottom: 20px;
+    }
+    
+    .impact-number {
+        font-size: 36px;
+        font-weight: 800;
+        color: #2E7D32;
+        margin-bottom: 10px;
+    }
+    
+    /* Section projets */
+    .section-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 15px;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, #2E7D32, #4CAF50);
+        border-radius: 3px;
+    }
+    
+    .project-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        cursor: pointer;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    }
+    
+    .project-image {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+    
+    .project-category {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(46,125,50,0.9);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .project-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255,255,255,0.3);
+    }
+    
+    .project-progress-bar {
+        height: 100%;
+        background: #FF9800;
+        transition: width 0.6s ease;
+    }
+    
+    .project-body {
+        padding: 20px;
+    }
+    
+    .project-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #1B5E20;
+    }
+    
+    .project-location {
+        font-size: 13px;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    .project-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .project-stat {
+        text-align: center;
+    }
+    
+    .project-stat-value {
+        font-weight: 700;
+        color: #2E7D32;
+    }
+    
+    .project-stat-label {
+        font-size: 11px;
+        color: #6c757d;
+    }
+    
+    /* Barre de recherche */
+    .search-bar {
+        background: white;
+        border-radius: 60px;
+        padding: 5px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .search-input {
+        border: none;
+        padding: 15px 20px;
+        border-radius: 60px;
+        font-size: 16px;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    
+    .search-btn {
+        border-radius: 60px;
+        padding: 10px 30px;
+        background: #2E7D32;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .search-btn:hover {
+        background: #1B5E20;
+        transform: scale(1.02);
+    }
+    
+    /* Témoignages */
+    .testimonial-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    }
+    
+    .testimonial-text {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #495057;
+        margin-bottom: 20px;
+        font-style: italic;
+    }
+    
+    .testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .testimonial-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #2E7D32;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    
+    .testimonial-name {
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .testimonial-role {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    /* CTA Section */
+    .cta-section {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+        border-radius: 30px;
+        padding: 60px 40px;
+        text-align: center;
+        color: white;
+        margin: 50px 0;
+    }
+    
+    .cta-title {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 20px;
+    }
+    
+    .cta-button {
+        background: white;
+        color: #2E7D32;
+        border: none;
+        padding: 12px 35px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s;
+    }
+    
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        background: white;
+        color: #1B5E20;
+    }
+    
+    /* Newsletter */
+    .newsletter-section {
+        background: #f8f9fa;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+    }
+    
+    .newsletter-form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+    
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 32px;
+        }
+        
+        .hero-subtitle {
+            font-size: 16px;
+        }
+        
+        .hero-stat-value {
+            font-size: 24px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+        }
+        
+        .cta-section {
+            padding: 40px 20px;
+        }
+        
+        .cta-title {
+            font-size: 24px;
+        }
+        
+        .impact-number {
+            font-size: 28px;
+        }
+    }
+    
+    /* Loading skeleton */
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-
-    <div id="homepageCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
-  <div class="carousel-indicators">
-    <button type="button" data-bs-target="#homepageCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-    <button type="button" data-bs-target="#homepageCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-    <button type="button" data-bs-target="#homepageCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-  </div>
-  <div class="carousel-inner rounded">
-    <div class="carousel-item active">
-      <img src="{{ url_for('static', filename='images/farming1.jpg') }}" class="d-block w-100" alt="Agriculture durable">
-      <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-2">
-        <h5>Investir dans l’agriculture durable</h5>
-        <p>Contribuez à un avenir plus vert et plus prospère.</p>
-      </div>
-    </div>
-    <div class="carousel-item">
-      <img src="{{ url_for('static', filename='images/farming2.jpg') }}" class="d-block w-100" alt="Projets agricoles">
-      <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-2">
-        <h5>Projets agricoles transparents</h5>
-        <p>Suivez l’évolution de vos investissements en toute confiance.</p>
-      </div>
-    </div>
-    <div class="carousel-item">
-      <img src="{{ url_for('static', filename='images/farming3.jpg') }}" class="d-block w-100" alt="Soutenir les agriculteurs">
-      <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded px-3 py-2">
-        <h5>Soutenez les agriculteurs locaux</h5>
-        <p>Faites la différence dans la vie des communautés rurales.</p>
-      </div>
-    </div>
-  </div>
-  <button class="carousel-control-prev" type="button" data-bs-target="#homepageCarousel" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Précédent</span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#homepageCarousel" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Suivant</span>
-  </button>
-</div>
-
-
-    <!-- Statistiques rapides -->
-    <div class="row text-center mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Projets publiés</h5>
-                    <p class="display-6">{{ total_projects or projects|length }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Investisseurs inscrits</h5>
-                    <p class="display-6">{{ total_investors or '?' }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Montant total investi</h5>
-                    <p class="display-6">{{ total_invested or '0.00' }} HTG</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Liste des projets -->
-    <h2 id="projets" class="mb-4 text-center">Projets disponibles</h2>
-
-    {% if projects %}
-    <div class="row">
-        {% for project in projects %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ project.title }}</h5>
-                    <p class="card-text">
-                        <strong>Localisation :</strong> {{ project.location or 'Non spécifiée' }}<br>
-                        <strong>Montant nécessaire :</strong> {{ "{:,.2f}".format(project.amount_needed) }} HTG
-                    </p>
-                    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-outline-success w-100">
-                        Voir les détails
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 class="hero-title">
+                    <i class="fas fa-seedling me-2"></i>
+                    Cultivons l'avenir d'Haïti ensemble
+                </h1>
+                <p class="hero-subtitle">
+                    Investissez dans des projets agricoles durables et soutenez les agriculteurs haïtiens 
+                    tout en obtenant un retour sur investissement.
+                </p>
+                <div class="hero-buttons">
+                    <a href="{{ url_for('main.projects') }}" class="btn btn-light btn-lg me-3 mb-2">
+                        <i class="fas fa-search me-2"></i>Explorer les projets
                     </a>
+                    {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-lg mb-2">
+                        <i class="fas fa-user-plus me-2"></i>Créer un compte
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Stats hero -->
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ stats.total_projects|default(0) }}</div>
+                        <div class="hero-stat-label">Projets financés</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ stats.total_investors|default(0) }}</div>
+                        <div class="hero-stat-label">Investisseurs actifs</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ "{:,.0f}".format(stats.total_raised|default(0)).replace(",", " ") }}M</div>
+                        <div class="hero-stat-label">Gourdes investies</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ stats.farmers_helped|default(0) }}</div>
+                        <div class="hero-stat-label">Agriculteurs soutenus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Section Impact -->
+    <div class="text-center mb-5">
+        <h2 class="section-title">Notre impact en chiffres</h2>
+        <p class="text-muted">Ensemble, nous faisons la différence pour l'agriculture haïtienne</p>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-3 col-sm-6">
+            <div class="impact-card">
+                <div class="impact-icon">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <div class="impact-number">{{ stats.projects_funded|default(42) }}</div>
+                <div class="impact-label">Projets réalisés</div>
+                <small class="text-muted">dans 10 départements</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="impact-card">
+                <div class="impact-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="impact-number">{{ stats.farmers_helped|default(156) }}</div>
+                <div class="impact-label">Agriculteurs aidés</div>
+                <small class="text-muted">et leurs familles</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="impact-card">
+                <div class="impact-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="impact-number">{{ stats.jobs_created|default(89) }}</div>
+                <div class="impact-label">Emplois créés</div>
+                <small class="text-muted">dans les zones rurales</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="impact-card">
+                <div class="impact-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div class="impact-number">{{ stats.co2_reduction|default(1240) }} t</div>
+                <div class="impact-label">CO₂ réduit</div>
+                <small class="text-muted">pratiques durables</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de recherche -->
+    <div class="search-bar">
+        <form method="GET" action="{{ url_for('main.home') }}" class="d-flex">
+            <input type="text" class="form-control search-input" 
+                   placeholder="Rechercher un projet par titre, localisation ou catégorie..." 
+                   name="q" value="{{ request.args.get('q', '') }}">
+            <button class="btn search-btn text-white" type="submit">
+                <i class="fas fa-search me-2"></i>Rechercher
+            </button>
+        </form>
+    </div>
+
+    <!-- Projets vedettes -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="section-title">Projets à la une</h2>
+            <p class="text-muted">Découvrez les projets qui ont besoin de votre soutien</p>
+        </div>
+        <a href="{{ url_for('main.projects') }}" class="btn btn-outline-success">
+            Voir tous <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+
+    {% if featured_projects %}
+    <div class="row g-4 mb-5">
+        {% for project in featured_projects %}
+        <div class="col-lg-4 col-md-6">
+            <div class="project-card" onclick="window.location.href='{{ url_for('main.project_detail', project_id=project.id) }}'">
+                <div class="project-image" style="background-image: url('{{ project.image_url or url_for('static', filename='images/project-default.jpg') }}');">
+                    <span class="project-category">
+                        <i class="fas fa-tag me-1"></i>{{ project.category|default('Agriculture') }}
+                    </span>
+                    <div class="project-progress">
+                        <div class="project-progress-bar" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="project-body">
+                    <h3 class="project-title">{{ project.title }}</h3>
+                    <div class="project-location">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ project.location|default('Haïti') }}
+                    </div>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }}</div>
+                            <div class="project-stat-label">Collectés</div>
+                        </div>
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ project.progress_percentage }}%</div>
+                            <div class="project-stat-label">Atteint</div>
+                        </div>
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ project.days_remaining|default(0) }}</div>
+                            <div class="project-stat-label">Jours restants</div>
+                        </div>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-users me-1"></i>{{ project.investor_count }} investisseurs
+                        </small>
+                        <span class="text-success fw-bold">
+                            {{ "{:,.0f}".format(project.amount_needed - project.amount_raised).replace(",", " ") }} HTG restants
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info text-center">Aucun projet n'est actuellement disponible.</div>
+    <div class="alert alert-info text-center mb-5">
+        <i class="fas fa-info-circle me-2"></i>
+        Aucun projet vedette pour le moment. Revenez bientôt !
+    </div>
     {% endif %}
 
-    <form method="GET" action="{{ url_for('main.home') }}" class="mb-5">
-        <div class="input-group">
-            <input type="text" class="form-control" placeholder="Rechercher un projet par titre ou localisation"
-                name="q" value="{{ request.args.get('q', '') }}">
-            <button class="btn btn-outline-primary" type="submit">Rechercher</button>
-        </div>
-    </form>
-
-    
-    <hr class="my-5">
-    <h4 class="text-center mb-4">Nos partenaires</h4>
-    <div class="d-flex justify-content-center flex-wrap gap-4 mb-5">
-        <img src="{{ url_for('static', filename='img/') }}" alt="Partenaire 1" height="50">
-        <img src="{{ url_for('static', filename='img/') }}" alt="Partenaire 2" height="50">
-        <img src="{{ url_for('static', filename='img/') }}" alt="Partenaire 3" height="50">
-    </div>
-
-    <section class="py-5 bg-light">
-    <div class="container">
-        <h2 class="text-center mb-4">Pourquoi AgrInvest ?</h2>
-        <div class="row text-center">
-        <div class="col-md-4">
-            <i class="bi bi-people-fill fs-1 text-success"></i>
-            <h5 class="mt-3">Investissements Solidaires</h5>
-            <p>Reliez les investisseurs aux agriculteurs pour dynamiser l’agriculture locale.</p>
-        </div>
-        <div class="col-md-4">
-            <i class="bi bi-cash-stack fs-1 text-success"></i>
-            <h5 class="mt-3">Rendement & Impact</h5>
-            <p>Faites fructifier vos finances tout en soutenant des projets agricoles durables.</p>
-        </div>
-        <div class="col-md-4">
-            <i class="bi bi-shield-check fs-1 text-success"></i>
-            <h5 class="mt-3">Sécurité & Transparence</h5>
-            <p>Suivi des projets, contrats téléchargeables, paiements sécurisés.</p>
-        </div>
+    <!-- Tous les projets -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="section-title">Tous les projets</h2>
+            <p class="text-muted">Explorez l'ensemble des projets disponibles</p>
         </div>
     </div>
-    </section>
 
-    <section class="py-5">
-    <div class="container">
-        <h2 class="text-center mb-5">Ils nous font confiance</h2>
-        <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <p class="card-text">"Grâce à AgrInvest, j’ai pu financer ma première récolte de manioc. Une expérience fluide et humaine !"</p>
-                <h6 class="card-subtitle text-muted mt-3">— Marie Joseph, Agricultrice à Hinche</h6>
-            </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <p class="card-text">"Un moyen concret d’investir dans notre pays. J’ai déjà soutenu 3 projets et je vois l’impact !"</p>
-                <h6 class="card-subtitle text-muted mt-3">— Jean-Paul Pierre, Investisseur</h6>
-            </div>
-            </div>
-        </div>
-        </div>
-    </div>
-    </section>
-    <section class="py-5 bg-light">
-        <div class="container">
-            <h2 class="text-center mb-4">Foire Aux Questions (FAQ)</h2>
-            <div class="accordion" id="faqAccordion">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="faq1">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
-                    Comment puis-je investir dans un projet ?
-                </button>
-                </h2>
-                <div id="collapse1" class="accordion-collapse collapse show" aria-labelledby="faq1" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Il vous suffit de créer un compte investisseur, choisir un projet et saisir le montant à investir. Un contrat PDF vous sera automatiquement généré.
-                </div>
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="faq2">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
-                    Est-ce que mon argent est en sécurité ?
-                </button>
-                </h2>
-                <div id="collapse2" class="accordion-collapse collapse" aria-labelledby="faq2" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Oui. Toutes les transactions sont sécurisées et les contrats vous protègent juridiquement. Vous suivez aussi l’évolution du projet.
-                </div>
-                </div>
-            </div>
-
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="faq3">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
-                    Les projets sont-ils vérifiés ?
-                </button>
-                </h2>
-                <div id="collapse3" class="accordion-collapse collapse" aria-labelledby="faq3" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                    Chaque projet est soumis à une vérification manuelle avant publication, afin d'assurer sa faisabilité et la fiabilité de l'agriculteur.
-                </div>
-                </div>
-            </div>
-            </div>
-        </div>
-        </section>
-
-        <footer class="bg-dark text-white py-4 mt-5">
-            <div class="container">
-                <div class="row">
-                <div class="col-md-4">
-                    <h5>AgrInvest</h5>
-                    <p>Connecter investisseurs et agriculteurs pour un avenir durable.</p>
-                </div>
-                <div class="col-md-4">
-                    <h5>Liens utiles</h5>
-                    <ul class="list-unstyled">
-                    <li><a href="{{ url_for('main.home') }}" class="text-white">Accueil</a></li>
-                    <li><a href="{{ url_for('main.login') }}" class="text-white">Se connecter</a></li>
-                    <li><a href="{{ url_for('main.register') }}" class="text-white">Créer un compte</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h5>Contact</h5>
-                    <p>Email : contact@agrinvest.ht</p>
-                    <p>Téléphone : +509 1234-5678</p>
-                    <div class="mt-2">
-                    <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-white me-2"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" class="text-white"><i class="bi bi-linkedin"></i></a>
+    {% if projects %}
+    <div class="row g-4">
+        {% for project in projects %}
+        <div class="col-lg-4 col-md-6">
+            <div class="project-card" onclick="window.location.href='{{ url_for('main.project_detail', project_id=project.id) }}'">
+                <div class="project-image" style="background-image: url('{{ project.image_url or url_for('static', filename='images/project-default.jpg') }}');">
+                    <span class="project-category">
+                        <i class="fas fa-tag me-1"></i>{{ project.category|default('Agriculture') }}
+                    </span>
+                    <div class="project-progress">
+                        <div class="project-progress-bar" style="width: {{ project.progress_percentage }}%"></div>
                     </div>
                 </div>
+                <div class="project-body">
+                    <h3 class="project-title">{{ project.title }}</h3>
+                    <div class="project-location">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ project.location|default('Haïti') }}
+                    </div>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }}</div>
+                            <div class="project-stat-label">Collectés</div>
+                        </div>
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ project.progress_percentage }}%</div>
+                            <div class="project-stat-label">Atteint</div>
+                        </div>
+                        <div class="project-stat">
+                            <div class="project-stat-value">{{ project.investor_count }}</div>
+                            <div class="project-stat-label">Investisseurs</div>
+                        </div>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
+                    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-hand-holding-heart me-2"></i>Investir
+                    </a>
                 </div>
-                <hr class="bg-light">
-                <p class="text-center mb-0">&copy; 2025 AgrInvest. Tous droits réservés.</p>
             </div>
-            </footer>
+        </div>
+        {% endfor %}
+    </div>
 
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.home', page=pagination.prev_num, q=request.args.get('q', '')) }}">
+                    <i class="fas fa-chevron-left"></i> Précédent
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages() %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link {% if p == pagination.page %}bg-success border-success{% endif %}" 
+                           href="{{ url_for('main.home', page=p, q=request.args.get('q', '')) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.home', page=pagination.next_num, q=request.args.get('q', '')) }}">
+                    Suivant <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info text-center mb-5">
+        <i class="fas fa-search me-2"></i>
+        {% if request.args.get('q') %}
+            Aucun projet ne correspond à votre recherche "{{ request.args.get('q') }}"
+        {% else %}
+            Aucun projet n'est actuellement disponible. Revenez bientôt !
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Pourquoi nous choisir -->
+    <section class="my-5">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Pourquoi choisir AgriInvest ?</h2>
+            <p class="text-muted">Une plateforme transparente et sécurisée pour vos investissements</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="impact-icon">
+                        <i class="fas fa-handshake fa-3x text-success"></i>
+                    </div>
+                    <h5 class="mt-3">Investissements Solidaires</h5>
+                    <p class="text-muted">Reliez les investisseurs aux agriculteurs pour dynamiser l'agriculture locale et créer un impact positif durable.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="impact-icon">
+                        <i class="fas fa-chart-line fa-3x text-success"></i>
+                    </div>
+                    <h5 class="mt-3">Rendement & Impact</h5>
+                    <p class="text-muted">Faites fructifier vos finances tout en soutenant des projets agricoles durables et responsables.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-4">
+                    <div class="impact-icon">
+                        <i class="fas fa-shield-alt fa-3x text-success"></i>
+                    </div>
+                    <h5 class="mt-3">Sécurité & Transparence</h5>
+                    <p class="text-muted">Suivi des projets en temps réel, contrats téléchargeables et paiements 100% sécurisés.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Témoignages -->
+    <section class="my-5">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Ils nous font confiance</h2>
+            <p class="text-muted">Découvrez les expériences de notre communauté</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                                        </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">MJ</div>
+                        <div class="testimonial-info">
+                            <div class="testimonial-name">Marie Joseph</div>
+                            <div class="testimonial-role">Agricultrice à Hinche</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                        "Un moyen concret d'investir dans notre pays. J'ai déjà soutenu 3 projets et je vois l'impact réel sur le terrain !"
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">JP</div>
+                        <div class="testimonial-info">
+                            <div class="testimonial-name">Jean-Paul Pierre</div>
+                            <div class="testimonial-role">Investisseur, Port-au-Prince</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Accordion -->
+    <section class="my-5">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Foire aux questions</h2>
+            <p class="text-muted">Tout ce que vous devez savoir sur AgriInvest</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                <i class="fas fa-question-circle text-success me-2"></i>
+                                Comment puis-je investir dans un projet ?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Il vous suffit de créer un compte investisseur (gratuit), parcourir les projets disponibles, 
+                                choisir celui qui vous intéresse et saisir le montant que vous souhaitez investir. 
+                                Un contrat PDF vous sera automatiquement généré et vous pourrez suivre l'évolution du projet 
+                                depuis votre tableau de bord.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                <i class="fas fa-lock text-success me-2"></i>
+                                Est-ce que mon argent est en sécurité ?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Oui, absolument. Toutes les transactions sont sécurisées via des partenaires de paiement agréés. 
+                                Les fonds sont bloqués sur des comptes séquestres jusqu'à l'atteinte de l'objectif du projet. 
+                                De plus, un contrat juridique vous protège et vous pouvez suivre l'utilisation des fonds 
+                                à chaque étape du projet.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                Les projets sont-ils vérifiés ?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Oui, chaque projet est soumis à une vérification rigoureuse avant publication. 
+                                Notre équipe vérifie la faisabilité technique, la viabilité financière, 
+                                les antécédents de l'agriculteur et la cohérence du budget. 
+                                Seuls les projets répondant à nos critères de qualité sont mis en ligne.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                <i class="fas fa-globe text-success me-2"></i>
+                                Puis-je investir depuis l'étranger ?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolument ! La diaspora haïtienne peut investir facilement depuis n'importe où dans le monde. 
+                                Nous acceptons les paiements internationaux (USD, EUR, CAD) et nos plateformes de paiement 
+                                sont adaptées aux transactions internationales. Vous pouvez soutenir votre pays d'origine 
+                                où que vous soyez.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                <i class="fas fa-file-invoice text-success me-2"></i>
+                                Quel est le retour sur investissement ?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Le retour sur investissement varie selon les projets. Il peut prendre la forme d'un partage des récoltes, 
+                                d'intérêts sur le prêt ou d'une revente des parts. Chaque projet détaille clairement son modèle 
+                                de retour dans la description. En moyenne, nos investisseurs obtiennent un rendement annuel 
+                                de 5 à 12% selon le niveau de risque du projet.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="cta-title">Prêt à faire la différence ?</h2>
+                <p class="mb-4">Rejoignez notre communauté et contribuez au développement agricole d'Haïti</p>
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('main.register') }}" class="btn cta-button">
+                    <i class="fas fa-user-plus me-2"></i>Créer un compte gratuitement
+                </a>
+                {% else %}
+                <a href="{{ url_for('main.projects') }}" class="btn cta-button">
+                    <i class="fas fa-search me-2"></i>Explorer les projets
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Newsletter -->
+    <div class="newsletter-section mb-5">
+        <h3 class="mb-3">Restez informé</h3>
+        <p class="text-muted mb-4">Recevez les actualités des nouveaux projets et les opportunités d'investissement</p>
+        <form class="newsletter-form" method="POST" action="{{ url_for('main.newsletter') }}">
+            <div class="input-group mb-3">
+                <input type="email" class="form-control" name="email" placeholder="Votre adresse email" required>
+                <button class="btn btn-success" type="submit">
+                    <i class="fas fa-paper-plane me-2"></i>S'abonner
+                </button>
+            </div>
+            <small class="text-muted">Votre email est sécurisé. Vous pouvez vous désabonner à tout moment.</small>
+        </form>
+    </div>
 </div>
+
+<!-- Mini footer -->
+<footer class="bg-dark text-white py-4 mt-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h5><i class="fas fa-seedling me-2"></i>AgriInvest Haïti</h5>
+                <p class="small">Connecter investisseurs et agriculteurs pour un avenir durable en Haïti.</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Liens rapides</h5>
+                <ul class="list-unstyled small">
+                    <li><a href="{{ url_for('main.home') }}" class="text-white text-decoration-none">Accueil</a></li>
+                    <li><a href="{{ url_for('main.projects') }}" class="text-white text-decoration-none">Projets</a></li>
+                    <li><a href="{{ url_for('main.about') }}" class="text-white text-decoration-none">À propos</a></li>
+                    <li><a href="{{ url_for('main.contact') }}" class="text-white text-decoration-none">Contact</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4 mb-3">
+                <h5>Contact</h5>
+                <p class="small mb-1"><i class="fas fa-envelope me-2"></i>contact@agrinvest.ht</p>
+                <p class="small"><i class="fas fa-phone me-2"></i>+509 1234-5678</p>
+                <div class="mt-2">
+                    <a href="#" class="text-white me-2"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </div>
+        <hr class="bg-light">
+        <div class="text-center small">
+            &copy; 2024 AgriInvest Haïti - Tous droits réservés
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animation des éléments au scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in-up');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.impact-card, .project-card, .testimonial-card').forEach(el => {
+        el.style.opacity = '0';
+        observer.observe(el);
+    });
+    
+    // Smooth scroll pour les ancres
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            if (href !== '#' && href !== '') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+    
+    // Statistiques animées
+    function animateNumbers() {
+        const numbers = document.querySelectorAll('.impact-number, .hero-stat-value');
+        numbers.forEach(number => {
+            const finalValue = parseInt(number.innerText);
+            let currentValue = 0;
+            const duration = 2000;
+            const increment = finalValue / (duration / 16);
+            
+            const updateNumber = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    clearInterval(updateNumber);
+                    number.innerText = finalValue.toLocaleString();
+                } else {
+                    number.innerText = Math.floor(currentValue).toLocaleString();
+                }
+            }, 16);
+        });
+    }
+    
+    // Démarrer les animations au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        animateNumbers();
+        
+        // Ajouter une classe pour le chargement
+        setTimeout(() => {
+            document.querySelectorAll('.skeleton').forEach(el => {
+                el.classList.remove('skeleton');
+            });
+        }, 500);
+    });
+    
+    // Effet parallaxe sur le hero
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const hero = document.querySelector('.hero-section');
+        if (hero) {
+            hero.style.transform = `translateY(${scrolled * 0.4}px)`;
+        }
+    });
+</script>
 {% endblock %}

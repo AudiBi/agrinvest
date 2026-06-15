@@ -1,23 +1,744 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard Agriculteur{% endblock %}
+
+{% block title %}Dashboard Agriculteur - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Statistiques cards */
+    .stat-card {
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(46,125,50,0.15);
+    }
+    
+    .stat-icon {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        font-size: 48px;
+        opacity: 0.15;
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #2E7D32;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Filtres */
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .filter-btn {
+        border-radius: 50px;
+        padding: 8px 20px;
+        margin-right: 10px;
+        transition: all 0.3s;
+    }
+    
+    .filter-btn.active {
+        background: #2E7D32;
+        color: white;
+    }
+    
+    /* Projet card */
+    .project-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        margin-bottom: 25px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .project-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    }
+    
+    .project-header {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+        color: white;
+        padding: 15px 20px;
+        position: relative;
+    }
+    
+    .project-status {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: rgba(255,255,255,0.2);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .project-status.funded { background: #FF9800; color: #fff; }
+    .project-status.published { background: #4CAF50; }
+    .project-status.draft { background: #9E9E9E; }
+    .project-status.expired { background: #f44336; }
+    
+    .project-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        padding-right: 100px;
+    }
+    
+    .project-meta {
+        font-size: 13px;
+        opacity: 0.9;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .project-body {
+        padding: 20px;
+    }
+    
+    .progress-section {
+        margin-bottom: 20px;
+    }
+    
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .progress-bar-custom {
+        height: 10px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2E7D32 0%, #4CAF50 100%);
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+    
+    .amount-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .amount-item {
+        text-align: center;
+        flex: 1;
+    }
+    
+    .amount-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2E7D32;
+    }
+    
+    .amount-label {
+        font-size: 11px;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+    
+    .project-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+    
+    .btn-action i {
+        margin-right: 5px;
+    }
+    
+    /* Projet vide */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+    }
+    
+    .empty-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .empty-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2E7D32;
+        margin-bottom: 10px;
+    }
+    
+    /* Quick tips */
+    .tips-card {
+        background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .tips-title {
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 15px;
+    }
+    
+    .tips-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .tips-list li {
+        margin-bottom: 10px;
+        padding-left: 25px;
+        position: relative;
+    }
+    
+    .tips-list li:before {
+        content: "💡";
+        position: absolute;
+        left: 0;
+    }
+    
+    /* Loading */
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 40px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stat-value {
+            font-size: 24px;
+        }
+        
+        .project-title {
+            font-size: 16px;
+            padding-right: 80px;
+        }
+        
+        .project-meta {
+            font-size: 11px;
+            gap: 10px;
+        }
+        
+        .amount-value {
+            font-size: 14px;
+        }
+        
+        .filter-bar {
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .filter-btn {
+            display: inline-block;
+        }
+    }
+    
+    /* Animation */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .project-card {
+        animation: slideIn 0.4s ease-out;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Mes projets agricoles</h1>
+<div class="container-fluid px-0">
+    <!-- En-tête avec bienvenue -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <div>
+            <h1 class="display-5 fw-bold text-success mb-2">
+                <i class="fas fa-tractor me-2"></i>Bonjour, {{ current_user.name }} !
+            </h1>
+            <p class="text-muted">
+                <i class="fas fa-chart-line me-1"></i>
+                Gérez vos projets agricoles et suivez vos investissements
+            </p>
+        </div>
+        <a href="{{ url_for('main.new_project') }}" class="btn btn-success btn-lg shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i>Nouveau projet
+        </a>
+    </div>
 
-<a href="{{ url_for('main.new_project') }}" class="btn btn-success mb-3">+ Créer un nouveau projet</a>
+    <!-- Cartes statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card p-3">
+                <div class="stat-icon"><i class="fas fa-seedling"></i></div>
+                <div class="stat-value">{{ stats.total_projects|default(0) }}</div>
+                <div class="stat-label">Projets créés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card p-3">
+                <div class="stat-icon"><i class="fas fa-rocket"></i></div>
+                <div class="stat-value">{{ stats.published_projects|default(0) }}</div>
+                <div class="stat-label">Projets publiés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card p-3">
+                <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                <div class="stat-value">{{ stats.funded_projects|default(0) }}</div>
+                <div class="stat-label">Projets financés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card p-3">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-value">{{ stats.total_investors|default(0) }}</div>
+                <div class="stat-label">Investisseurs</div>
+            </div>
+        </div>
+    </div>
 
-{% if projects %}
-  <ul class="list-group">
-    {% for p in projects %}
-    <li class="list-group-item">
-      <strong>{{ p.title }}</strong><br>
-      Objectif : {{ "{:,.0f}".format(p.amount_needed).replace(",", " ") }} HTG
-    </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <div class="alert alert-info">
-    Vous n'avez pas encore créé de projet. Cliquez sur "Créer un nouveau projet" pour démarrer.
-  </div>
-{% endif %}
+    <!-- Barre de filtres -->
+    <div class="filter-bar">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div class="fw-semibold">
+                <i class="fas fa-filter me-1"></i>Filtrer :
+            </div>
+            <div class="btn-group flex-wrap">
+                <button class="filter-btn btn btn-outline-success {% if filter_status == 'all' %}active{% endif %}" data-status="all">
+                    <i class="fas fa-list me-1"></i>Tous
+                </button>
+                <button class="filter-btn btn btn-outline-success {% if filter_status == 'published' %}active{% endif %}" data-status="published">
+                    <i class="fas fa-globe me-1"></i>Publiés
+                </button>
+                <button class="filter-btn btn btn-outline-success {% if filter_status == 'funded' %}active{% endif %}" data-status="funded">
+                    <i class="fas fa-check-circle me-1"></i>Financés
+                </button>
+                <button class="filter-btn btn btn-outline-success {% if filter_status == 'draft' %}active{% endif %}" data-status="draft">
+                    <i class="fas fa-pencil-alt me-1"></i>Brouillons
+                </button>
+                <button class="filter-btn btn btn-outline-success {% if filter_status == 'expired' %}active{% endif %}" data-status="expired">
+                    <i class="fas fa-clock me-1"></i>Expirés
+                </button>
+            </div>
+            
+            <div class="ms-auto">
+                <div class="input-group" style="width: 250px;">
+                    <input type="text" id="searchProject" class="form-control" placeholder="Rechercher un projet..." value="{{ search_query|default('') }}">
+                    <button class="btn btn-outline-success" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div class="loading" id="loadingSpinner">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-2 text-muted">Chargement de vos projets...</p>
+    </div>
+
+    <!-- Liste des projets -->
+    <div id="projectsContainer">
+        {% if projects %}
+            <div class="row">
+                {% for project in projects %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="project-card" data-project-id="{{ project.id }}" data-status="{{ project.status }}">
+                        <div class="project-header">
+                            <div class="project-status {{ project.status }}">
+                                {% if project.status == 'published' %}
+                                    <i class="fas fa-globe me-1"></i>Publié
+                                {% elif project.status == 'funded' %}
+                                    <i class="fas fa-trophy me-1"></i>Financé
+                                {% elif project.status == 'draft' %}
+                                    <i class="fas fa-pencil-alt me-1"></i>Brouillon
+                                {% elif project.status == 'expired' %}
+                                    <i class="fas fa-clock me-1"></i>Expiré
+                                {% else %}
+                                    {{ project.status }}
+                                {% endif %}
+                            </div>
+                            <h3 class="project-title">{{ project.title }}</h3>
+                            <div class="project-meta">
+                                <span><i class="fas fa-calendar-alt me-1"></i>{{ project.created_at|format_date }}</span>
+                                <span><i class="fas fa-map-marker-alt me-1"></i>{{ project.department|default('Haïti') }}</span>
+                                <span><i class="fas fa-tag me-1"></i>{{ project.category|default('Agriculture') }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="project-body">
+                            <div class="progress-section">
+                                <div class="progress-label">
+                                    <span>Progression</span>
+                                    <span class="fw-bold text-success">{{ project.progress }}%</span>
+                                </div>
+                                <div class="progress-bar-custom">
+                                    <div class="progress-fill" style="width: {{ project.progress }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="amount-stats">
+                                <div class="amount-item">
+                                    <div class="amount-value">{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }}</div>
+                                    <div class="amount-label">Collectés (HTG)</div>
+                                </div>
+                                <div class="amount-item">
+                                    <div class="amount-value">{{ "{:,.0f}".format(project.amount_needed).replace(",", " ") }}</div>
+                                    <div class="amount-label">Objectif (HTG)</div>
+                                </div>
+                                <div class="amount-item">
+                                    <div class="amount-value">{{ project.investor_count }}</div>
+                                    <div class="amount-label">Investisseurs</div>
+                                </div>
+                            </div>
+                            
+                            {% if project.days_remaining and project.status == 'published' %}
+                            <div class="alert alert-warning py-2 px-3 mt-3 mb-0 small">
+                                <i class="fas fa-hourglass-half me-2"></i>
+                                {{ project.days_remaining }} jour(s) restant(s) avant la fin de la campagne
+                            </div>
+                            {% endif %}
+                            
+                            <div class="project-actions">
+                                <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn-action btn btn-outline-success">
+                                    <i class="fas fa-eye"></i> Voir
+                                </a>
+                                <a href="{{ url_for('main.edit_project', project_id=project.id) }}" class="btn-action btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Modifier
+                                </a>
+                                <a href="{{ url_for('main.project_updates', project_id=project.id) }}" class="btn-action btn btn-outline-info">
+                                    <i class="fas fa-newspaper"></i> Mises à jour
+                                </a>
+                                {% if project.status == 'draft' %}
+                                <button class="btn-action btn btn-success publish-project" data-id="{{ project.id }}">
+                                    <i class="fas fa-cloud-upload-alt"></i> Publier
+                                </button>
+                                {% endif %}
+                                <button class="btn-action btn btn-outline-danger delete-project" data-id="{{ project.id }}">
+                                    <i class="fas fa-trash-alt"></i> Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="Navigation des projets" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.farmer_dashboard', page=pagination.prev_num, status=filter_status, search=search_query) }}">
+                            <i class="fas fa-chevron-left"></i> Précédent
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                        {% if page_num %}
+                            {% if page_num == pagination.page %}
+                            <li class="page-item active">
+                                <span class="page-link bg-success border-success">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.farmer_dashboard', page=page_num, status=filter_status, search=search_query) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.farmer_dashboard', page=pagination.next_num, status=filter_status, search=search_query) }}">
+                            Suivant <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <!-- État vide -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <div class="empty-title">
+                    {% if search_query %}
+                        Aucun projet trouvé pour "{{ search_query }}"
+                    {% else %}
+                        Vous n'avez pas encore créé de projet
+                    {% endif %}
+                </div>
+                <p class="text-muted mb-4">
+                    {% if search_query %}
+                        Essayez d'autres critères de recherche
+                    {% else %}
+                        Commencez votre aventure agricole en créant votre premier projet
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('main.new_project') }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Créer mon premier projet
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Conseils rapides -->
+    <div class="tips-card">
+        <div class="tips-title">
+            <i class="fas fa-lightbulb me-2"></i>Conseils pour réussir votre projet
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="tips-list">
+                    <li>Ajoutez des photos de qualité pour attirer plus d'investisseurs</li>
+                    <li>Soyez transparent sur l'utilisation des fonds</li>
+                    <li>Communiquez régulièrement avec vos investisseurs via les mises à jour</li>
+                    <li>Partagez votre projet sur les réseaux sociaux</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="tips-list">
+                    <li>Mettez en avant l'impact social et environnemental de votre projet</li>
+                    <li>Répondez rapidement aux questions des investisseurs potentiels</li>
+                    <li>Proposez des contreparties attractives</li>
+                    <li>Sollicitez votre réseau local et la diaspora haïtienne</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal confirmation suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer ce projet ?</p>
+                <p class="text-danger small mb-0">⚠️ Cette action est irréversible. Toutes les données associées seront perdues.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let projectToDelete = null;
+    
+    $(document).ready(function() {
+        // Filtrage par statut
+        $('.filter-btn').click(function() {
+            let status = $(this).data('status');
+            let url = new URL(window.location.href);
+            url.searchParams.set('status', status);
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
+        
+        // Recherche
+        $('#searchBtn').click(function() {
+            let query = $('#searchProject').val();
+            let url = new URL(window.location.href);
+            if (query) {
+                url.searchParams.set('search', query);
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
+        
+        $('#searchProject').keypress(function(e) {
+            if (e.which == 13) {
+                $('#searchBtn').click();
+            }
+        });
+        
+        // Publication d'un projet
+        $('.publish-project').click(function() {
+            let projectId = $(this).data('id');
+            if (confirm('Êtes-vous sûr de vouloir publier ce projet ?\n\nUne fois publié, il sera visible par tous les investisseurs.')) {
+                $.ajax({
+                    url: '/projects/' + projectId + '/publish',
+                    method: 'POST',
+                    beforeSend: function() {
+                        $('#loadingSpinner').show();
+                        $('.project-card').css('opacity', '0.5');
+                    },
+                    success: function(response) {
+                        if (response.message) {
+                            showToast('success', 'Projet publié avec succès !');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr) {
+                        let error = xhr.responseJSON?.error || 'Erreur lors de la publication';
+                        showToast('error', error);
+                        $('#loadingSpinner').hide();
+                        $('.project-card').css('opacity', '1');
+                    }
+                });
+            }
+        });
+        
+        // Suppression d'un projet
+        $('.delete-project').click(function() {
+            projectToDelete = $(this).data('id');
+            $('#deleteModal').modal('show');
+        });
+        
+        $('#confirmDelete').click(function() {
+            if (projectToDelete) {
+                $.ajax({
+                    url: '/projects/' + projectToDelete,
+                    method: 'DELETE',
+                    beforeSend: function() {
+                        $('#deleteModal').modal('hide');
+                        $('#loadingSpinner').show();
+                    },
+                    success: function(response) {
+                        showToast('success', 'Projet supprimé avec succès');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    },
+                    error: function(xhr) {
+                        let error = xhr.responseJSON?.error || 'Erreur lors de la suppression';
+                        showToast('error', error);
+                        $('#loadingSpinner').hide();
+                    }
+                });
+            }
+        });
+        
+        // Rafraîchissement automatique toutes les 30 secondes
+        let autoRefresh = true;
+        if (autoRefresh) {
+            setTimeout(function() {
+                location.reload();
+            }, 30000);
+        }
+    });
+    
+    // Fonction pour afficher les toasts
+    function showToast(type, message) {
+        let toastHtml = `
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+                <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(toastHtml);
+        let toast = new bootstrap.Toast($('.toast').last());
+        toast.show();
+        
+        setTimeout(function() {
+            $('.toast').last().remove();
+        }, 5000);
+    }
+    
+    // Animation des cartes au scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.project-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.4s ease-out';
+        observer.observe(card);
+    });
+</script>
 {% endblock %}

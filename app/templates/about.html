@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}À propos - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .about-header {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+        color: white;
+        padding: 60px 0;
+        text-align: center;
+        margin-bottom: 50px;
+        border-radius: 0 0 30px 30px;
+    }
+    .mission-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+        height: 100%;
+        transition: transform 0.3s;
+    }
+    .mission-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .mission-icon {
+        font-size: 48px;
+        color: var(--primary-color);
+        margin-bottom: 20px;
+    }
+    .team-card {
+        text-align: center;
+        transition: transform 0.3s;
+        padding: 20px;
+    }
+    .team-card:hover {
+        transform: translateY(-5px);
+    }
+    .team-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-bottom: 15px;
+        border: 3px solid var(--primary-color);
+    }
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--primary-color);
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -34px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+    }
+    .value-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        height: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="about-header">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">À propos d'AgriInvest Haïti</h1>
+        <p class="lead">Notre mission : transformer l'agriculture haïtienne grâce au financement participatif</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Mission, Vision, Valeurs -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="mission-card">
+                <div class="mission-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <h4>Notre mission</h4>
+                <p>Connecter les investisseurs aux agriculteurs haïtiens pour financer des projets agricoles durables et rentables.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mission-card">
+                <div class="mission-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h4>Notre vision</h4>
+                <p>Faire de l'agriculture un secteur attractif, rentable et durable, moteur du développement économique d'Haïti.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mission-card">
+                <div class="mission-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h4>Nos valeurs</h4>
+                <p>Transparence, confiance, impact social et développement durable.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notre histoire -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <h2 class="text-success mb-4">Notre histoire</h2>
+            <p>Fondée en 2022, AgriInvest Haïti est née d'un constat simple : les agriculteurs haïtiens ont du mal à accéder au financement, tandis que la diaspora et les investisseurs locaux cherchent des moyens concrets d'investir dans leur pays.</p>
+            <p>Notre plateforme comble ce fossé en offrant un espace de financement participatif transparent, sécurisé et accessible à tous.</p>
+            <p>En deux ans, nous avons déjà financé plus de 40 projets, aidé plus de 150 agriculteurs et créé près de 90 emplois dans les zones rurales d'Haïti.</p>
+        </div>
+        <div class="col-md-6">
+            <h2 class="text-success mb-4">Notre impact</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h5 class="text-success">2022</h5>
+                    <strong>Lancement d'AgriInvest</strong>
+                    <p class="text-muted small">Première version de la plateforme avec 5 projets pilotes</p>
+                </div>
+                <div class="timeline-item">
+                    <h5 class="text-success">2023</h5>
+                    <strong>100 projets financés</strong>
+                    <p class="text-muted small">Atteinte du premier palier significatif</p>
+                </div>
+                <div class="timeline-item">
+                    <h5 class="text-success">2024</h5>
+                    <strong>Expansion nationale</strong>
+                    <p class="text-muted small">Présence dans les 10 départements d'Haïti</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Équipe -->
+    <h2 class="text-center text-success mb-4">Notre équipe</h2>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="team-card">
+                <img src="{{ url_for('static', filename='img/team/jean.jpg') }}" class="team-image" alt="Jean Dupont" onerror="this.src='https://placehold.co/150x150/2E7D32/white?text=JD'">
+                <h5>Jean Dupont</h5>
+                <p class="text-success">CEO & Co-fondateur</p>
+                <p class="small text-muted">Expert en finance agricole avec 15 ans d'expérience</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="team-card">
+                <img src="{{ url_for('static', filename='img/team/marie.jpg') }}" class="team-image" alt="Marie Joseph" onerror="this.src='https://placehold.co/150x150/2E7D32/white?text=MJ'">
+                <h5>Marie Joseph</h5>
+                <p class="text-success">Directrice des opérations</p>
+                <p class="small text-muted">Spécialiste en développement rural</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="team-card">
+                <img src="{{ url_for('static', filename='img/team/paul.jpg') }}" class="team-image" alt="Paul Antoine" onerror="this.src='https://placehold.co/150x150/2E7D32/white?text=PA'">
+                <h5>Paul Antoine</h5>
+                <p class="text-success">CTO</p>
+                <p class="small text-muted">Ingénieur logiciel spécialisé en fintech</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nos valeurs -->
+    <h2 class="text-center text-success mb-4">Ce qui nous guide</h2>
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="value-card">
+                <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                <h6>Transparence</h6>
+                <small class="text-muted">Information claire sur chaque projet</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="value-card">
+                <i class="fas fa-handshake fa-3x text-success mb-3"></i>
+                <h6>Confiance</h6>
+                <small class="text-muted">Vérification rigoureuse des projets</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="value-card">
+                <i class="fas fa-leaf fa-3x text-success mb-3"></i>
+                <h6>Durabilité</h6>
+                <small class="text-muted">Pratiques agricoles responsables</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="value-card">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h6>Impact social</h6>
+                <small class="text-muted">Création d'emplois locaux</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partenaires -->
+    <div class="text-center mb-5">
+        <h2 class="text-success mb-4">Nos partenaires</h2>
+        <div class="d-flex justify-content-center flex-wrap gap-4">
+            <div class="bg-light p-3 rounded">Partenariat 1</div>
+            <div class="bg-light p-3 rounded">Partenariat 2</div>
+            <div class="bg-light p-3 rounded">Partenariat 3</div>
+            <div class="bg-light p-3 rounded">Partenariat 4</div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="card bg-success text-white mb-5">
+        <div class="card-body text-center p-5">
+            <h3 class="mb-3">Rejoignez l'aventure</h3>
+            <p class="mb-4">Que vous soyez investisseur ou agriculteur, contribuez au développement agricole d'Haïti</p>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('main.register') }}" class="btn btn-light btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Créer un compte
+            </a>
+            {% else %}
+            <a href="{{ url_for('main.project_list') }}" class="btn btn-light btn-lg">
+                <i class="fas fa-search me-2"></i>Explorer les projets
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

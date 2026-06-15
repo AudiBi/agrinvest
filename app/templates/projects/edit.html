@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier le projet - {{ project.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+    }
+    .form-label i {
+        color: #2E7D32;
+        margin-right: 8px;
+    }
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #2E7D32;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+    }
+    .image-preview {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #2E7D32, #1B5E20);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46,125,50,0.3);
+    }
+    .info-note {
+        background: #E8F5E9;
+        border-left: 4px solid #2E7D32;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-success">
+            <i class="fas fa-edit me-2"></i>Modifier le projet
+        </h1>
+        <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour au projet
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="info-note">
+            <i class="fas fa-info-circle text-success me-2"></i>
+            Modifiez les informations de votre projet. Les changements seront visibles après publication.
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row g-4">
+                <!-- Titre -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>Titre du projet *
+                    </label>
+                    <input type="text" name="title" class="form-control" value="{{ project.title }}" required>
+                </div>
+
+                <!-- Titre en créole -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-language"></i>Titre en Kreyòl
+                    </label>
+                    <input type="text" name="title_ht" class="form-control" value="{{ project.title_ht or '' }}">
+                </div>
+
+                <!-- Catégorie -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i>Catégorie *
+                    </label>
+                    <select name="category" class="form-select" required>
+                        <option value="">Sélectionnez une catégorie</option>
+                        <option value="Tubercules" {% if project.category == 'Tubercules' %}selected{% endif %}>Tubercules</option>
+                        <option value="Café/Cacao" {% if project.category == 'Café/Cacao' %}selected{% endif %}>Café/Cacao</option>
+                        <option value="Légumes" {% if project.category == 'Légumes' %}selected{% endif %}>Légumes</option>
+                        <option value="Fruits" {% if project.category == 'Fruits' %}selected{% endif %}>Fruits</option>
+                        <option value="Céréales" {% if project.category == 'Céréales' %}selected{% endif %}>Céréales</option>
+                        <option value="Élevage" {% if project.category == 'Élevage' %}selected{% endif %}>Élevage</option>
+                    </select>
+                </div>
+
+                <!-- Localisation -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-map-marker-alt"></i>Localisation *
+                    </label>
+                    <input type="text" name="location" class="form-control" value="{{ project.location or '' }}" placeholder="Ville, région">
+                </div>
+
+                <!-- Département -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-map"></i>Département
+                    </label>
+                    <select name="department" class="form-select">
+                        <option value="">Sélectionnez un département</option>
+                        <option value="Artibonite" {% if project.department == 'Artibonite' %}selected{% endif %}>Artibonite</option>
+                        <option value="Centre" {% if project.department == 'Centre' %}selected{% endif %}>Centre</option>
+                        <option value="Grand'Anse" {% if project.department == "Grand'Anse" %}selected{% endif %}>Grand'Anse</option>
+                        <option value="Nippes" {% if project.department == 'Nippes' %}selected{% endif %}>Nippes</option>
+                        <option value="Nord" {% if project.department == 'Nord' %}selected{% endif %}>Nord</option>
+                        <option value="Nord-Est" {% if project.department == 'Nord-Est' %}selected{% endif %}>Nord-Est</option>
+                        <option value="Nord-Ouest" {% if project.department == 'Nord-Ouest' %}selected{% endif %}>Nord-Ouest</option>
+                        <option value="Ouest" {% if project.department == 'Ouest' %}selected{% endif %}>Ouest</option>
+                        <option value="Sud" {% if project.department == 'Sud' %}selected{% endif %}>Sud</option>
+                        <option value="Sud-Est" {% if project.department == 'Sud-Est' %}selected{% endif %}>Sud-Est</option>
+                    </select>
+                </div>
+
+                <!-- Description courte -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>Description courte *
+                    </label>
+                    <input type="text" name="short_description" class="form-control" value="{{ project.short_description or '' }}" maxlength="300" required>
+                    <small class="text-muted">Maximum 300 caractères</small>
+                </div>
+
+                <!-- Description complète -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-file-alt"></i>Description complète *
+                    </label>
+                    <textarea name="description" class="form-control" rows="6" required>{{ project.description or '' }}</textarea>
+                </div>
+
+                <!-- Description en créole -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-language"></i>Description en Kreyòl
+                    </label>
+                    <textarea name="description_ht" class="form-control" rows="4">{{ project.description_ht or '' }}</textarea>
+                </div>
+
+                <!-- Montants -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-chart-line"></i>Objectif (HTG) *
+                    </label>
+                    <input type="number" name="amount_needed" class="form-control" value="{{ project.amount_needed }}" min="10000" step="1000" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-hand-holding-heart"></i>Investissement minimum (HTG)
+                    </label>
+                    <input type="number" name="min_investment" class="form-control" value="{{ project.min_investment }}" min="100" step="100">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i>Investissement maximum (HTG)
+                    </label>
+                    <input type="number" name="max_investment" class="form-control" value="{{ project.max_investment or '' }}" step="1000">
+                </div>
+
+                <!-- Date limite -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt"></i>Date limite de financement *
+                    </label>
+                    <input type="date" name="deadline" class="form-control" value="{{ project.deadline.strftime('%Y-%m-%d') if project.deadline else '' }}" required>
+                </div>
+
+                <!-- Image du projet -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-image"></i>Image du projet
+                    </label>
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                    {% if project.image_url %}
+                    <img src="{{ project.image_url }}" class="image-preview" alt="Aperçu">
+                    <small class="text-muted d-block mt-2">Laissez vide pour conserver l'image actuelle</small>
+                    {% endif %}
+                </div>
+
+                <!-- Boutons -->
+                <div class="col-12 text-center mt-4">
+                    <button type="submit" class="btn-save px-5">
+                        <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                    </button>
+                    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-secondary ms-3">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Section publication (si le projet est en brouillon) -->
+    {% if project.status == 'draft' %}
+    <div class="mt-4 p-4 bg-light rounded-4">
+        <h5 class="text-warning mb-3">
+            <i class="fas fa-rocket me-2"></i>Prêt à publier ?
+        </h5>
+        <p>Une fois publié, votre projet sera visible par tous les investisseurs.</p>
+        <form method="POST" action="{{ url_for('main.publish_project', project_id=project.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success" onclick="return confirm('Publier ce projet ?')">
+                <i class="fas fa-cloud-upload-alt me-2"></i>Publier le projet
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

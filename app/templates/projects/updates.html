@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Mises à jour - {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-success">{{ project.title }}</h1>
+    <h3>Mises à jour</h3>
+    
+    {% if updates.items %}
+        {% for update in updates.items %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>{{ update.title }}</h5>
+                <p>{{ update.content }}</p>
+                <small class="text-muted">{{ update.created_at|format_datetime }}</small>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Pagination -->
+        {% if updates.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if updates.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ updates.prev_num }}">← Précédent</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link bg-success border-success">{{ updates.page }}</span>
+                </li>
+                {% if updates.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ updates.next_num }}">Suivant →</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <p>Aucune mise à jour pour le moment.</p>
+    {% endif %}
+    
+    <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-secondary">
+        ← Retour au projet
+    </a>
+</div>
+{% endblock %}

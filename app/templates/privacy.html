@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Politique de confidentialité - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="text-success mb-4">Politique de confidentialité</h1>
+    <div class="card">
+        <div class="card-body">
+            <h5>1. Collecte des données</h5>
+            <p>Nous collectons les informations que vous fournissez lors de votre inscription : nom, email, téléphone, localisation.</p>
+
+            <h5 class="mt-4">2. Utilisation des données</h5>
+            <p>Vos données sont utilisées pour :</p>
+            <ul>
+                <li>Gérer votre compte et vos investissements</li>
+                <li>Vous informer des actualités de la plateforme</li>
+                <li>Améliorer nos services</li>
+            </ul>
+
+            <h5 class="mt-4">3. Partage des données</h5>
+            <p>Vos données ne sont jamais vendues à des tiers. Elles sont partagées uniquement avec :</p>
+            <ul>
+                <li>Les agriculteurs (nom et montant investi)</li>
+                <li>Nos partenaires de paiement (Stripe, MonCash)</li>
+                <li>Les autorités légales si requis</li>
+            </ul>
+
+            <h5 class="mt-4">4. Sécurité</h5>
+            <p>Nous mettons en œuvre des mesures de sécurité pour protéger vos données.</p>
+
+            <h5 class="mt-4">5. Vos droits</h5>
+            <p>Vous pouvez accéder, modifier ou supprimer vos données à tout moment depuis votre profil.</p>
+
+            <hr class="my-4">
+            <p class="text-muted small">Dernière mise à jour : 1er janvier 2024</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

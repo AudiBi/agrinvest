@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un projet - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+    }
+    .form-label i {
+        color: #2E7D32;
+        margin-right: 8px;
+    }
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #2E7D32;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+    }
+    .btn-create {
+        background: linear-gradient(135deg, #2E7D32, #1B5E20);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46,125,50,0.3);
+    }
+    .info-note {
+        background: #E8F5E9;
+        border-left: 4px solid #2E7D32;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    .steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin: 0 5px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .step.active {
+        background: #2E7D32;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-success">
+            <i class="fas fa-plus-circle me-2"></i>Créer un nouveau projet
+        </h1>
+        <a href="{{ url_for('main.farmer_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour au tableau de bord
+        </a>
+    </div>
+
+    <!-- Étapes -->
+    <div class="steps">
+        <div class="step active">1. Informations générales</div>
+        <div class="step">2. Description détaillée</div>
+        <div class="step">3. Financement</div>
+        <div class="step">4. Publication</div>
+    </div>
+
+    <div class="form-container">
+        <div class="info-note">
+            <i class="fas fa-info-circle text-success me-2"></i>
+            Remplissez tous les champs obligatoires (*). Votre projet sera soumis à validation avant publication.
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="row g-4">
+                <!-- Titre -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-heading"></i>Titre du projet *
+                    </label>
+                    <input type="text" name="title" class="form-control" placeholder="Ex: Extension plantation de manioc" required>
+                </div>
+
+                <!-- Titre en créole -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-language"></i>Titre en Kreyòl (optionnel)
+                    </label>
+                    <input type="text" name="title_ht" class="form-control" placeholder="Ex: Elajisman plantasyon manyòk">
+                </div>
+
+                <!-- Catégorie -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-tag"></i>Catégorie *
+                    </label>
+                    <select name="category" class="form-select" required>
+                        <option value="">Sélectionnez une catégorie</option>
+                        <option value="Tubercules">Tubercules (manioc, patate, igname)</option>
+                        <option value="Café/Cacao">Café/Cacao</option>
+                        <option value="Légumes">Légumes (tomates, poivrons, choux)</option>
+                        <option value="Fruits">Fruits (mangues, avocats, agrumes)</option>
+                        <option value="Céréales">Céréales (riz, maïs, sorgho)</option>
+                        <option value="Élevage">Élevage (caprins, bovins, volaille)</option>
+                    </select>
+                </div>
+
+                <!-- Localisation -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-map-marker-alt"></i>Localisation *
+                    </label>
+                    <input type="text" name="location" class="form-control" placeholder="Ex: Hinche, Centre" required>
+                </div>
+
+                <!-- Département -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-map"></i>Département
+                    </label>
+                    <select name="department" class="form-select">
+                        <option value="">Sélectionnez un département</option>
+                        <option value="Artibonite">Artibonite</option>
+                        <option value="Centre">Centre</option>
+                        <option value="Grand'Anse">Grand'Anse</option>
+                        <option value="Nippes">Nippes</option>
+                        <option value="Nord">Nord</option>
+                        <option value="Nord-Est">Nord-Est</option>
+                        <option value="Nord-Ouest">Nord-Ouest</option>
+                        <option value="Ouest">Ouest</option>
+                        <option value="Sud">Sud</option>
+                        <option value="Sud-Est">Sud-Est</option>
+                    </select>
+                </div>
+
+                <!-- Commune -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-city"></i>Commune
+                    </label>
+                    <input type="text" name="commune" class="form-control" placeholder="Ex: Hinche, Mirebalais">
+                </div>
+
+                <!-- Description courte -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-align-left"></i>Description courte (accroche) *
+                    </label>
+                    <input type="text" name="short_description" class="form-control" 
+                           placeholder="Décrivez brièvement votre projet en une phrase" maxlength="300" required>
+                    <small class="text-muted">Maximum 300 caractères. Cette phrase apparaîtra dans la liste des projets.</small>
+                </div>
+
+                <!-- Description complète -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-file-alt"></i>Description complète *
+                    </label>
+                    <textarea name="description" class="form-control" rows="6" 
+                              placeholder="Décrivez en détail votre projet : objectifs, activités prévues, bénéfices attendus..." required></textarea>
+                    <small class="text-muted">Détaillez votre projet pour convaincre les investisseurs.</small>
+                </div>
+
+                <!-- Description en créole -->
+                <div class="col-12">
+                    <label class="form-label">
+                        <i class="fas fa-language"></i>Description en Kreyòl (optionnel)
+                    </label>
+                    <textarea name="description_ht" class="form-control" rows="4" 
+                              placeholder="Dekri pwojè ou an kreyòl"></textarea>
+                </div>
+
+                <!-- Montants -->
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-chart-line"></i>Objectif de financement (HTG) *
+                    </label>
+                    <input type="number" name="amount_needed" class="form-control" placeholder="Ex: 250000" min="10000" step="1000" required>
+                    <small class="text-muted">Montant total nécessaire pour réaliser votre projet</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-hand-holding-heart"></i>Investissement minimum (HTG)
+                    </label>
+                    <input type="number" name="min_investment" class="form-control" value="1000" min="100" step="100">
+                    <small class="text-muted">Montant minimum par investisseur</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i>Investissement maximum (HTG)
+                    </label>
+                    <input type="number" name="max_investment" class="form-control" placeholder="Optionnel" step="1000">
+                    <small class="text-muted">Laissez vide pour illimité</small>
+                </div>
+
+                <!-- Date limite -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-calendar-alt"></i>Date limite de financement *
+                    </label>
+                    <input type="date" name="deadline" class="form-control" required>
+                    <small class="text-muted">Date jusqu'à laquelle les investissements sont acceptés</small>
+                </div>
+
+                <!-- Image -->
+                <div class="col-md-6">
+                    <label class="form-label">
+                        <i class="fas fa-image"></i>Image du projet *
+                    </label>
+                    <input type="file" name="image" class="form-control" accept="image/*" required>
+                    <small class="text-muted">Format JPG, PNG ou GIF. Taille max: 5MB</small>
+                </div>
+
+                <!-- Impact social -->
+                <div class="col-12">
+                    <hr>
+                    <h5 class="text-success mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>Impact attendu (optionnel)
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Emplois estimés</label>
+                            <input type="number" name="estimated_jobs" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Agriculteurs aidés</label>
+                            <input type="number" name="estimated_farmers_helped" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Réduction CO₂ (kg)</label>
+                            <input type="number" name="co2_reduction_kg" class="form-control" value="0" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="col-12 text-center mt-4">
+                    <button type="submit" class="btn-create px-5">
+                        <i class="fas fa-save me-2"></i>Créer le projet
+                    </button>
+                    <a href="{{ url_for('main.farmer_dashboard') }}" class="btn btn-secondary ms-3">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Conseils -->
+    <div class="mt-4 p-4 bg-light rounded-4">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-lightbulb me-2"></i>Conseils pour un projet réussi
+        </h5>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="d-flex align-items-start mb-2">
+                    <i class="fas fa-camera text-success me-2 mt-1"></i>
+                    <span>Utilisez une photo de qualité qui illustre bien votre projet</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-start mb-2">
+                    <i class="fas fa-chart-line text-success me-2 mt-1"></i>
+                    <span>Soyez réaliste sur votre objectif de financement</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-start mb-2">
+                    <i class="fas fa-comments text-success me-2 mt-1"></i>
+                    <span>Détaillez précisément l'utilisation des fonds</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Date minimale = aujourd'hui + 7 jours
+    const today = new Date();
+    const minDate = new Date(today);
+    minDate.setDate(today.getDate() + 7);
+    const dateInput = document.querySelector('input[name="deadline"]');
+    if (dateInput) {
+        dateInput.min = minDate.toISOString().split('T')[0];
+    }
+</script>
+{% endblock %}

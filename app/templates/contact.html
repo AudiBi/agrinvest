@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-envelope me-2"></i>Nous contacter</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nom complet</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Sujet</label>
+                                <input type="text" name="subject" class="form-control" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Message</label>
+                                <textarea name="message" class="form-control" rows="5" required></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Envoyer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mt-4 text-center">
+                <div class="col-md-4">
+                    <i class="fas fa-map-marker-alt fa-2x text-success mb-2"></i>
+                    <h6>Adresse</h6>
+                    <p class="small">Port-au-Prince, Haïti</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="fas fa-phone fa-2x text-success mb-2"></i>
+                    <h6>Téléphone</h6>
+                    <p class="small">+509 1234-5678</p>
+                </div>
+                <div class="col-md-4">
+                    <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                    <h6>Email</h6>
+                    <p class="small">contact@agrinvest.ht</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

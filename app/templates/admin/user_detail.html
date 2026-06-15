@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Détail utilisateur - {{ user.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .info-label {
+        font-weight: 600;
+        color: #2E7D32;
+        width: 150px;
+        display: inline-block;
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    .status-verified {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="profile-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="fas fa-user-circle me-2"></i>{{ user.name }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-envelope me-1"></i>{{ user.email }}
+                    {% if user.phone %}
+                    | <i class="fas fa-phone me-1"></i>{{ user.phone }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-end">
+                <div class="mb-2">
+                    <span class="status-badge status-{{ 'active' if user.is_active else 'inactive' }}">
+                        <i class="fas fa-{{ 'check-circle' if user.is_active else 'ban' }} me-1"></i>
+                        {{ 'Actif' if user.is_active else 'Inactif' }}
+                    </span>
+                    {% if user.is_verified %}
+                    <span class="status-badge status-verified ms-2">
+                        <i class="fas fa-check-circle me-1"></i>Vérifié
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="btn-group">
+                    <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}" class="d-inline me-2">
+                        <button type="submit" class="btn btn-{{ 'danger' if user.is_active else 'success' }} btn-sm">
+                            <i class="fas fa-{{ 'ban' if user.is_active else 'check' }} me-1"></i>
+                            {{ 'Désactiver' if user.is_active else 'Activer' }}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.toggle_user_verified', user_id=user.id) }}" class="d-inline me-2">
+                        <button type="submit" class="btn btn-info btn-sm">
+                            <i class="fas fa-{{ 'check-circle' if user.is_verified else 'question-circle' }} me-1"></i>
+                            {{ 'Marquer non vérifié' if user.is_verified else 'Marquer vérifié' }}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.make_admin', user_id=user.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-warning btn-sm">
+                            <i class="fas fa-{{ 'user-minus' if user.is_admin else 'user-shield' }} me-1"></i>
+                            {{ 'Retirer admin' if user.is_admin else 'Promouvoir admin' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Colonne gauche - Informations -->
+        <div class="col-lg-6">
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-info-circle me-2"></i>Informations personnelles
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Rôle :</span>
+                    <span class="badge bg-{{ 'primary' if user.role == 'investor' else 'success' }}">
+                        {{ user.role|capitalize }}
+                    </span>
+                    {% if user.is_admin %}
+                    <span class="badge bg-danger ms-1">Administrateur</span>
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Pays :</span>
+                    {{ user.country or 'Non spécifié' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Ville :</span>
+                    {{ user.city or 'Non spécifié' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Localisation :</span>
+                    {{ user.location or 'Non spécifié' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Bio :</span>
+                    {{ user.bio or 'Aucune biographie' }}
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-chart-line me-2"></i>Statistiques
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Date d'inscription :</span>
+                    {{ user.created_at|format_datetime }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Dernière connexion :</span>
+                    {{ user.last_login_at|format_datetime or 'Jamais' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Total investi :</span>
+                    <strong class="text-success">{{ "{:,.0f}".format(total_invested|default(0)).replace(",", " ") }} HTG</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne droite - Préférences -->
+        <div class="col-lg-6">
+            <div class="info-card">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-cog me-2"></i>Préférences
+                </h5>
+                <div class="mb-2">
+                    <span class="info-label">Devise préférée :</span>
+                    {{ user.preferred_currency or 'HTG' }}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Langue :</span>
+                    {% if user.preferred_language == 'ht' %}Kreyòl
+                    {% elif user.preferred_language == 'fr' %}Français
+                    {% elif user.preferred_language == 'en' %}English
+                    {% else %}Français{% endif %}
+                </div>
+                <div class="mb-2">
+                    <span class="info-label">Diaspora :</span>
+                    {{ 'Oui' if user.is_diaspora else 'Non' }}
+                    {% if user.is_diaspora and user.diaspora_community %}
+                    ({{ user.diaspora_community }})
+                    {% endif %}
+                </div>
+                {% if user.hometown_in_haiti %}
+                <div class="mb-2">
+                    <span class="info-label">Région d'origine :</span>
+                    {{ user.hometown_in_haiti }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Projets de l'utilisateur (si agriculteur) -->
+    {% if user.is_farmer and projects %}
+    <div class="info-card">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-tractor me-2"></i>Projets de l'agriculteur
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Titre</th>
+                        <th>Objectif</th>
+                        <th>Collecté</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>{{ project.title|truncate(40) }}</td>
+                        <td>{{ "{:,.0f}".format(project.amount_needed).replace(",", " ") }} HTG</td>
+                        <td>{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }} HTG</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if project.status == 'published' else 'warning' if project.status == 'pending' else 'info' }}">
+                                {{ project.status }}
+                            </span>
+                        </td>
+                        <td>{{ project.created_at|format_date }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Contributions de l'utilisateur (si investisseur) -->
+    {% if user.is_investor and contributions %}
+    <div class="info-card">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-hand-holding-heart me-2"></i>Contributions de l'investisseur
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Projet</th>
+                        <th>Montant</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrib in contributions %}
+                    <tr>
+                        <td>{{ contrib.project.title|truncate(40) }}</td>
+                        <td class="fw-bold text-success">{{ "{:,.0f}".format(contrib.amount).replace(",", " ") }} {{ contrib.currency }}</td>
+                        <td>{{ contrib.created_at|format_date }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if contrib.status == 'completed' else 'warning' }}">
+                                {{ contrib.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.project_detail', project_id=contrib.project_id) }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between mt-3">
+        <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action est irréversible.')">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash-alt me-2"></i>Supprimer l'utilisateur
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

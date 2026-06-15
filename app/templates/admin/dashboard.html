@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord - Administration{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .admin-stats:hover {
+        transform: translateY(-5px);
+    }
+    .stat-number {
+        font-size: 32px;
+        font-weight: 800;
+    }
+    .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+    .section-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .section-title {
+        color: #2E7D32;
+        border-left: 4px solid #2E7D32;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    .activity-item {
+        padding: 12px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background 0.3s;
+    }
+    .activity-item:hover {
+        background: #f8f9fa;
+    }
+    .pending-badge {
+        background: #ffc107;
+        color: #000;
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 12px;
+    }
+    .approved-badge {
+        background: #28a745;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-5 fw-bold text-success mb-2">
+                <i class="fas fa-shield-alt me-2"></i>Administration
+            </h1>
+            <p class="text-muted">Gérez les utilisateurs, projets et paramètres de la plateforme</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-success fs-6">
+                <i class="fas fa-calendar"></i> {{ now|format_date }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Cartes statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="admin-stats" style="background: linear-gradient(135deg, #2E7D32, #1B5E20);">
+                <div class="stat-number">{{ stats.total_users|default(0) }}</div>
+                <div class="stat-label">Utilisateurs totaux</div>
+                <small class="opacity-75">+{{ stats.new_users_today|default(0) }} aujourd'hui</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-stats" style="background: linear-gradient(135deg, #1565C0, #0D47A1);">
+                <div class="stat-number">{{ stats.total_projects|default(0) }}</div>
+                <div class="stat-label">Projets créés</div>
+                <small class="opacity-75">{{ stats.published_projects|default(0) }} publiés</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-stats" style="background: linear-gradient(135deg, #E65100, #BF360C);">
+                <div class="stat-number">{{ "{:,.0f}".format(stats.total_amount|default(0)).replace(",", " ") }}</div>
+                <div class="stat-label">Montant collecté (HTG)</div>
+                <small class="opacity-75">{{ stats.total_contributions|default(0) }} contributions</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-stats" style="background: linear-gradient(135deg, #6A1B9A, #4A148C);">
+                <div class="stat-number">{{ stats.platform_earnings|default(0)|round|int }}</div>
+                <div class="stat-label">Gains plateforme (HTG)</div>
+                <small class="opacity-75">Commission 3%</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Colonne gauche -->
+        <div class="col-lg-8">
+            <!-- Évolution des inscriptions -->
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-line me-2"></i>Évolution des inscriptions
+                </h5>
+                <canvas id="usersChart" height="200"></canvas>
+            </div>
+
+            <!-- Projets en attente -->
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="fas fa-clock me-2"></i>Projets en attente de validation
+                    <span class="badge bg-warning ms-2">{{ pending_projects|length }}</span>
+                </h5>
+                {% if pending_projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Agriculteur</th>
+                                    <th>Montant</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                 </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in pending_projects %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('admin.project_detail', project_id=project.id) }}" class="text-success">
+                                            {{ project.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ project.farmer.name }}</td>
+                                    <td>{{ "{:,.0f}".format(project.amount_needed).replace(",", " ") }} HTG</td>
+                                    <td>{{ project.created_at|format_date }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <form method="POST" action="{{ url_for('admin.approve_project', project_id=project.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approuver ce projet ?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('admin.reject_project', project_id=project.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Rejeter ce projet ?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">✅ Aucun projet en attente</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Colonne droite -->
+        <div class="col-lg-4">
+            <!-- Dernières contributions -->
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="fas fa-hand-holding-heart me-2"></i>Dernières contributions
+                </h5>
+                {% if recent_contributions %}
+                    <div class="activity-list">
+                        {% for contrib in recent_contributions %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ contrib.project.title|truncate(30) }}</strong><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ contrib.investor.name }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold text-success">{{ "{:,.0f}".format(contrib.amount).replace(",", " ") }} HTG</span><br>
+                                    <small class="text-muted">{{ contrib.created_at|format_date }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">Aucune contribution récente</p>
+                {% endif %}
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="fas fa-bolt me-2"></i>Actions rapides
+                </h5>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-success">
+                        <i class="fas fa-users me-2"></i>Gérer les utilisateurs
+                    </a>
+                    <a href="{{ url_for('admin.projects') }}" class="btn btn-outline-success">
+                        <i class="fas fa-tractor me-2"></i>Gérer les projets
+                    </a>
+                    <a href="{{ url_for('admin.stats') }}" class="btn btn-outline-success">
+                        <i class="fas fa-chart-bar me-2"></i>Voir les statistiques
+                    </a>
+                    <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-cog me-2"></i>Paramètres
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Graphique d'évolution des utilisateurs
+    const ctx = document.getElementById('usersChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for day in daily_users %}'{{ day.date }}',{% endfor %}],
+            datasets: [{
+                label: 'Nouveaux utilisateurs',
+                data: [{% for day in daily_users %}{{ day.count }},{% endfor %}],
+                borderColor: '#2E7D32',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

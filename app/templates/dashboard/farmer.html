@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Agriculteur - AgriInvest Haïti{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        height: 100%;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--primary-color);
+    }
+    .project-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .project-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    .project-header {
+        background: linear-gradient(135deg, #2E7D32, #1B5E20);
+        color: white;
+        padding: 15px 20px;
+        position: relative;
+    }
+    .project-status {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: rgba(255,255,255,0.2);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .btn-action {
+        border-radius: 50px;
+        padding: 6px 15px;
+        font-size: 13px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 16px;
+    }
+    .tips-card {
+        background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h1 class="display-5 fw-bold text-success mb-2">
+                <i class="fas fa-tractor me-2"></i>Bonjour, {{ current_user.name }} !
+            </h1>
+            <p class="text-muted">Gérez vos projets agricoles et suivez vos investissements</p>
+        </div>
+        <a href="{{ url_for('main.create_project') }}" class="btn btn-success btn-lg shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i>Nouveau projet
+        </a>
+    </div>
+
+    <!-- Cartes statistiques -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_projects }}</div>
+                <div class="text-muted">Projets créés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.published_projects }}</div>
+                <div class="text-muted">Projets publiés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.funded_projects }}</div>
+                <div class="text-muted">Projets financés</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-value">{{ "{:,.0f}".format(stats.total_raised).replace(",", " ") }}</div>
+                <div class="text-muted">HTG collectés</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de filtres -->
+    <div class="filter-bar">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+            <div class="btn-group">
+                <a href="?status=all" class="btn btn-sm btn-outline-success {% if filter_status == 'all' %}active{% endif %}">
+                    Tous
+                </a>
+                <a href="?status=published" class="btn btn-sm btn-outline-success {% if filter_status == 'published' %}active{% endif %}">
+                    Publiés
+                </a>
+                <a href="?status=funded" class="btn btn-sm btn-outline-success {% if filter_status == 'funded' %}active{% endif %}">
+                    Financés
+                </a>
+                <a href="?status=draft" class="btn btn-sm btn-outline-success {% if filter_status == 'draft' %}active{% endif %}">
+                    Brouillons
+                </a>
+                <a href="?status=expired" class="btn btn-sm btn-outline-success {% if filter_status == 'expired' %}active{% endif %}">
+                    Expirés
+                </a>
+            </div>
+            <div class="ms-auto">
+                <input type="text" id="searchProject" class="form-control" placeholder="Rechercher..." value="{{ search_query }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des projets -->
+    {% if projects.items %}
+        <div class="row">
+            {% for project in projects.items %}
+            <div class="col-md-6 col-lg-4">
+                <div class="project-card">
+                    <div class="project-header position-relative">
+                        <span class="project-status">
+                            {% if project.status == 'published' %}
+                                <i class="fas fa-globe"></i> Publié
+                            {% elif project.status == 'funded' %}
+                                <i class="fas fa-trophy"></i> Financé
+                            {% elif project.status == 'draft' %}
+                                <i class="fas fa-pencil-alt"></i> Brouillon
+                            {% else %}
+                                {{ project.status }}
+                            {% endif %}
+                        </span>
+                        <h5 class="mb-1">{{ project.title }}</h5>
+                        <small>
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ project.location|default('Haïti') }}
+                        </small>
+                    </div>
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Progression</span>
+                                <span class="fw-bold text-success">{{ project.progress_percentage }}%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" style="width: {{ project.progress_percentage }}%"></div>
+                            </div>
+                        </div>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="fw-bold text-success">{{ "{:,.0f}".format(project.amount_raised).replace(",", " ") }}</div>
+                                <small class="text-muted">Collectés</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-success">{{ "{:,.0f}".format(project.amount_needed).replace(",", " ") }}</div>
+                                <small class="text-muted">Objectif</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-success">{{ project.investor_count }}</div>
+                                <small class="text-muted">Investisseurs</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="btn btn-sm btn-outline-success flex-grow-1 btn-action">
+                                <i class="fas fa-eye"></i> Voir
+                            </a>
+                            <a href="{{ url_for('main.edit_project', project_id=project.id) }}" class="btn btn-sm btn-outline-primary btn-action">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if project.status == 'draft' %}
+                            <form method="POST" action="{{ url_for('main.publish_project', project_id=project.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success btn-action" onclick="return confirm('Publier ce projet ?')">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('main.delete_project', project_id=project.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger btn-action" onclick="return confirm('Supprimer ce projet ?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if projects.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if projects.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ projects.prev_num }}&status={{ filter_status }}&search={{ search_query }}">
+                        ← Précédent
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link bg-success border-success">{{ projects.page }}</span>
+                </li>
+                
+                {% if projects.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ projects.next_num }}&status={{ filter_status }}&search={{ search_query }}">
+                        Suivant →
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- État vide -->
+        <div class="empty-state">
+            <i class="fas fa-tractor fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Aucun projet pour le moment</h4>
+            <p class="text-muted">Commencez votre aventure agricole en créant votre premier projet</p>
+            <a href="{{ url_for('main.create_project') }}" class="btn btn-success mt-3">
+                <i class="fas fa-plus-circle me-2"></i>Créer mon premier projet
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Conseils rapides -->
+    <div class="tips-card">
+        <h5 class="text-success mb-3">
+            <i class="fas fa-lightbulb me-2"></i>Conseils pour réussir votre projet
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-camera text-success me-2"></i> Ajoutez des photos de qualité</li>
+                    <li class="mb-2"><i class="fas fa-chart-line text-success me-2"></i> Soyez transparent sur l'utilisation des fonds</li>
+                    <li class="mb-2"><i class="fas fa-comments text-success me-2"></i> Communiquez régulièrement avec vos investisseurs</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-share-alt text-success me-2"></i> Partagez votre projet sur les réseaux sociaux</li>
+                    <li class="mb-2"><i class="fas fa-hand-holding-heart text-success me-2"></i> Proposez des contreparties attractives</li>
+                    <li class="mb-2"><i class="fas fa-users text-success me-2"></i> Sollicitez votre réseau local et la diaspora</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Recherche dynamique
+    const searchInput = document.getElementById('searchProject');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.location.href = '?status={{ filter_status }}&search=' + encodeURIComponent(this.value);
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-success">Foire aux questions</h1>
+        <p class="lead">Tout ce que vous devez savoir sur AgriInvest Haïti</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            Comment puis-je investir dans un projet ?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Il vous suffit de créer un compte investisseur, parcourir les projets disponibles, choisir celui qui vous intéresse et saisir le montant que vous souhaitez investir.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Est-ce que mon argent est en sécurité ?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Oui, toutes les transactions sont sécurisées via des partenaires de paiement agréés. Les fonds sont bloqués sur des comptes séquestres jusqu'à l'atteinte de l'objectif du projet.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            Les projets sont-ils vérifiés ?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Oui, chaque projet est soumis à une vérification rigoureuse avant publication. Notre équipe vérifie la faisabilité technique, la viabilité financière et les antécédents de l'agriculteur.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            Puis-je investir depuis l'étranger ?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Absolument ! La diaspora haïtienne peut investir facilement depuis n'importe où dans le monde. Nous acceptons les paiements internationaux (USD, EUR, CAD).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                            Quel est le retour sur investissement ?
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Le retour sur investissement varie selon les projets. En moyenne, nos investisseurs obtiennent un rendement annuel de 5 à 12% selon le niveau de risque du projet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <p>Vous n'avez pas trouvé votre réponse ?</p>
+        <a href="{{ url_for('main.contact') }}" class="btn btn-success">
+            <i class="fas fa-envelope me-2"></i>Contactez-nous
+        </a>
+    </div>
+</div>
+{% endblock %}
