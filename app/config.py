@@ -322,6 +322,25 @@ class Config:
     WEBHOOK_RETRY_DELAY = 60  # secondes
     WEBHOOK_TIMEOUT = 30  # secondes
 
+        # =========================================================================
+    # OAuth - Google & Facebook
+    # =========================================================================
+    
+    # Google OAuth
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+    GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+    
+    # Facebook OAuth
+    FACEBOOK_CLIENT_ID = os.environ.get('FACEBOOK_CLIENT_ID', '')
+    FACEBOOK_CLIENT_SECRET = os.environ.get('FACEBOOK_CLIENT_SECRET', '')
+    FACEBOOK_DISCOVERY_URL = "https://www.facebook.com/.well-known/openid-configuration/"
+    
+    # OAuth Callback URLs
+    OAUTH_REDIRECT_URI = os.environ.get('OAUTH_REDIRECT_URI', 'http://localhost:5000/auth/callback')
+    
+    # Domaine (pour production)
+    OAUTH_DOMAIN = os.environ.get('OAUTH_DOMAIN', 'localhost')
 
 class DevelopmentConfig(Config):
     """Configuration pour le développement"""
@@ -355,7 +374,6 @@ class DevelopmentConfig(Config):
     # URL de base pour le développement
     BASE_URL = 'http://localhost:5000'
     API_BASE_URL = 'http://localhost:5000/api'
-
 
 class TestingConfig(Config):
     """Configuration pour les tests unitaires"""
