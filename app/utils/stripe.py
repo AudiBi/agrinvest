@@ -48,7 +48,7 @@ def create_stripe_payment_intent(contribution):
             'status': intent.status
         }
     
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         current_app.logger.error(f"Stripe error: {e}")
         return None
 
@@ -82,7 +82,7 @@ def handle_stripe_webhook(payload, sig_header):
         
         return event
     
-    except stripe.error.SignatureVerificationError as e:
+    except stripe.SignatureVerificationError as e:
         current_app.logger.error(f"Stripe webhook signature error: {e}")
         return None
 
@@ -108,7 +108,7 @@ def refund_stripe_payment(payment_intent_id, amount=None):
         refund = stripe_client.Refund.create(**refund_params)
         return refund.status == 'succeeded'
     
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         current_app.logger.error(f"Stripe refund error: {e}")
         return False
 
@@ -126,7 +126,7 @@ def retrieve_stripe_payment_intent(payment_intent_id):
     try:
         stripe_client = get_stripe_client()
         return stripe_client.PaymentIntent.retrieve(payment_intent_id)
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         current_app.logger.error(f"Stripe retrieve error: {e}")
         return None
 

@@ -25,7 +25,7 @@ def stripe_webhook():
         )
     except ValueError:
         return jsonify({'error': 'Invalid payload'}), 400
-    except stripe.error.SignatureVerificationError:
+    except stripe.SignatureVerificationError:
         return jsonify({'error': 'Invalid signature'}), 400
     
     # Traiter l'événement
@@ -126,5 +126,5 @@ def create_payment_intent():
             'payment_intent_id': intent.id
         }), 200
         
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         return jsonify({'error': str(e)}), 400
