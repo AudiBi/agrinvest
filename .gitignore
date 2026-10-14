@@ -399,3 +399,6 @@ celerybeat.pid
 
 # Garder le dossier instance
 !instance/.gitkeep
+# Fichiers générés
+app/temp_pdfs/
+/python

@@ -157,7 +157,8 @@ def _register_blueprints(app):
         app.register_blueprint(main_bp)
         app.logger.info("✅ Blueprint main enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint main non disponible: {e}")
+        app.logger.error(f"❌ Blueprint main non disponible: {e}")
+        raise
     
     # Blueprint d'authentification
     try:
@@ -165,7 +166,8 @@ def _register_blueprints(app):
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.logger.info("✅ Blueprint auth enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint auth non disponible: {e}")
+        app.logger.error(f"❌ Blueprint auth non disponible: {e}")
+        raise
     
     # Blueprint d'administration
     try:
@@ -173,7 +175,8 @@ def _register_blueprints(app):
         app.register_blueprint(admin_bp, url_prefix='/admin')
         app.logger.info("✅ Blueprint admin enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint admin non disponible: {e}")
+        app.logger.error(f"❌ Blueprint admin non disponible: {e}")
+        raise
     
     # API Blueprint
     try:
@@ -181,7 +184,8 @@ def _register_blueprints(app):
         app.register_blueprint(api_bp, url_prefix='/api/v1')
         app.logger.info("✅ Blueprint API v1 enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint API non disponible: {e}")
+        app.logger.error(f"❌ Blueprint API non disponible: {e}")
+        raise
     
     app.logger.info("🚀 Tous les blueprints ont été enregistrés")
 
