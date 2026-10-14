@@ -148,10 +148,38 @@ def handle_paypal_webhook(request_body, headers):
 
 
 def verify_paypal_webhook_signature(request_body, headers):
-    """Vérifie la signature du webhook PayPal"""
-    # Implémentation de vérification de signature
-    # À compléter avec l'API PayPal Webhook Verification
-    return True
+    """Vérifie la signature via l'API PayPal « verify-webhook-signature ». Échoue fermé."""
+    webhook_id = current_app.config.get('PAYPAL_WEBHOOK_ID')
+    token = get_paypal_access_token()
+    if not webhook_id or not token:
+        return False
+
+    import json
+    try:
+        event = json.loads(request_body)
+        payload = {
+            'auth_algo': headers.get('PAYPAL-AUTH-ALGO'),
+            'cert_url': headers.get('PAYPAL-CERT-URL'),
+            'transmission_id': headers.get('PAYPAL-TRANSMISSION-ID'),
+            'transmission_sig': headers.get('PAYPAL-TRANSMISSION-SIG'),
+            'transmission_time': headers.get('PAYPAL-TRANSMISSION-TIME'),
+            'webhook_id': webhook_id,
+            'webhook_event': event,
+        }
+        if not all(v for k, v in payload.items() if k != 'webhook_event'):
+            return False
+        base = get_paypal_api_url().rsplit('/v2', 1)[0]
+        response = requests.post(
+            f"{base}/v1/notifications/verify-webhook-signature",
+            json=payload,
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json().get('verification_status') == 'SUCCESS'
+    except (requests.RequestException, ValueError) as e:
+        current_app.logger.error(f"PayPal webhook verification error: {e}")
+        return False
 
 
 def refund_paypal_payment(capture_id, amount=None):

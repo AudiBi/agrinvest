@@ -53,16 +53,19 @@ def stripe_webhook():
 
 @payment_bp.route('/webhook/paypal', methods=['POST'])
 def paypal_webhook():
-    """Webhook PayPal"""
-    # À implémenter
+    """Webhook PayPal (signature vérifiée via l'API PayPal, échec fermé)"""
+    from app.utils.paypal import handle_paypal_webhook
+    
+    event = handle_paypal_webhook(request.get_data(as_text=True), request.headers)
+    if event is None:
+        return jsonify({'error': 'Invalid signature'}), 401
     return jsonify({'status': 'success'}), 200
 
 
-@payment_bp.route('/webhook/moncash', methods=['POST'])
-def moncash_webhook():
-    """Webhook MonCash pour Haïti"""
-    # À implémenter
-    return jsonify({'status': 'success'}), 200
+# MonCash : même gestionnaire (signature HMAC + idempotence) que /webhooks/moncash
+from app.api.webhook_routes import moncash_webhook  # noqa: E402
+
+payment_bp.add_url_rule('/webhook/moncash', 'moncash_webhook', moncash_webhook, methods=['POST'])
 
 
 @payment_bp.route('/config', methods=['GET'])
