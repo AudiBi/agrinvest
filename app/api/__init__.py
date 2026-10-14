@@ -19,7 +19,7 @@ from app.api import contribution_routes
 from app.api import group_contribution_routes
 from app.api import collection_point_routes
 from app.api import diaspora_routes
-from app.api import transfer_routes
+from app.api import fund_transfer_routes
 from app.api import harvest_routes
 from app.api import training_routes
 from app.api import weather_routes
@@ -37,7 +37,7 @@ api_bp.register_blueprint(contribution_routes.contribution_bp)
 api_bp.register_blueprint(group_contribution_routes.group_bp)
 api_bp.register_blueprint(collection_point_routes.collection_bp)
 api_bp.register_blueprint(diaspora_routes.diaspora_bp)
-api_bp.register_blueprint(transfer_routes.transfer_bp)
+api_bp.register_blueprint(fund_transfer_routes.transfer_bp)
 api_bp.register_blueprint(harvest_routes.harvest_bp)
 api_bp.register_blueprint(training_routes.training_bp)
 api_bp.register_blueprint(weather_routes.weather_bp)

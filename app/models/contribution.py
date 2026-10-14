@@ -157,6 +157,10 @@ class Contribution(db.Model):
     def mark_completed(self):
         from app.models.platform_commission import PlatformEarning
         
+        # Idempotent : un webhook rejoué ne doit ni recréditer le projet ni doubler la commission
+        if self.status == ContributionStatus.COMPLETED:
+            return
+        
         self.status = ContributionStatus.COMPLETED
         self.completed_at = utc_now()
         
@@ -191,11 +195,14 @@ class Contribution(db.Model):
         db.session.commit()
 
     def mark_refunded(self):
+        # Idempotent : remboursement API + webhook ne doivent déduire qu'une fois
+        if self.status == ContributionStatus.REFUNDED:
+            return
         self.status = ContributionStatus.REFUNDED
         self.refunded_at = utc_now()
         if self.project and self.amount_htg:
             self.project.amount_raised -= self.amount_htg
-            db.session.commit()
+        db.session.commit()
 
     def to_dict(self):
         return {

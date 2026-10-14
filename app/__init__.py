@@ -64,7 +64,7 @@ def create_app(config_name=None):
     """
     
     if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
+        config_name = os.environ.get('FLASK_ENV', 'production')
     
     # Création de l'application
     app = Flask(__name__, instance_relative_config=True)
@@ -73,11 +73,9 @@ def create_app(config_name=None):
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
     # Chargement de la configuration
-    app.config.from_object(config[config_name])
-    
-    # S'assurer que la clé secrète est définie
-    if not app.config.get('SECRET_KEY'):
-        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    config_class = config[config_name]
+    config_class.validate()  # SECRET_KEY / DATABASE_URL obligatoires
+    app.config.from_object(config_class)
     
     # Création des dossiers nécessaires
     _create_directories(app)
@@ -157,7 +155,8 @@ def _register_blueprints(app):
         app.register_blueprint(main_bp)
         app.logger.info("✅ Blueprint main enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint main non disponible: {e}")
+        app.logger.error(f"❌ Blueprint main non disponible: {e}")
+        raise
     
     # Blueprint d'authentification
     try:
@@ -165,7 +164,8 @@ def _register_blueprints(app):
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.logger.info("✅ Blueprint auth enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint auth non disponible: {e}")
+        app.logger.error(f"❌ Blueprint auth non disponible: {e}")
+        raise
     
     # Blueprint d'administration
     try:
@@ -173,7 +173,8 @@ def _register_blueprints(app):
         app.register_blueprint(admin_bp, url_prefix='/admin')
         app.logger.info("✅ Blueprint admin enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint admin non disponible: {e}")
+        app.logger.error(f"❌ Blueprint admin non disponible: {e}")
+        raise
     
     # API Blueprint
     try:
@@ -181,7 +182,8 @@ def _register_blueprints(app):
         app.register_blueprint(api_bp, url_prefix='/api/v1')
         app.logger.info("✅ Blueprint API v1 enregistré")
     except ImportError as e:
-        app.logger.warning(f"⚠️ Blueprint API non disponible: {e}")
+        app.logger.error(f"❌ Blueprint API non disponible: {e}")
+        raise
     
     app.logger.info("🚀 Tous les blueprints ont été enregistrés")
 

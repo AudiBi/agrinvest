@@ -5,31 +5,32 @@ Routes pour les webhooks (intégrations externes)
 from flask import request, jsonify, current_app, Blueprint
 from app.api import api_bp
 from app.models import Contribution, Project, User, FundTransfer
+from app.models.contribution import ContributionStatus, utc_now
 from app.extensions import db
 import hmac
 import hashlib
+import stripe
 
 
 webhook_bp = Blueprint('webhooks', __name__, url_prefix='/webhooks')
 
 
+def _valid_hmac(body, signature, secret):
+    """Vérifie une signature HMAC-SHA256 hex. Refuse tout si secret ou signature absents."""
+    if not secret or not signature:
+        return False
+    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature.strip().lower(), expected)
+
+
 @webhook_bp.route('/wise', methods=['POST'])
 def wise_webhook():
     """Webhook pour les transferts Wise"""
-    signature = request.headers.get('X-Wise-Signature')
-    payload = request.get_data(as_text=True)
-    
-    # Vérifier la signature
-    expected = hmac.new(
-        current_app.config['WISE_API_KEY'].encode(),
-        payload.encode(),
-        hashlib.sha256
-    ).hexdigest()
-    
-    if not hmac.compare_digest(signature, expected):
+    if not _valid_hmac(request.get_data(), request.headers.get('X-Wise-Signature'),
+                       current_app.config.get('WISE_WEBHOOK_SECRET')):
         return jsonify({'error': 'Invalid signature'}), 401
     
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     
     # Traiter l'événement
     if data.get('event_type') == 'transfer.state_changed':
@@ -53,15 +54,22 @@ def wise_webhook():
 @webhook_bp.route('/moncash', methods=['POST'])
 def moncash_webhook():
     """Webhook pour les paiements MonCash"""
-    data = request.get_json()
+    # Signature HMAC-SHA256 du corps brut (secret requis : fail closed)
+    if not _valid_hmac(request.get_data(), request.headers.get('X-MonCash-Signature'),
+                       current_app.config.get('MONCASH_WEBHOOK_SECRET')):
+        return jsonify({'error': 'Invalid signature'}), 401
     
-    payment_id = data.get('payment_id')
-    transaction_id = data.get('transaction_id')
+    data = request.get_json(silent=True) or {}
+    
+    # Les deux conventions de nommage coexistent dans le code (snake_case / camelCase)
+    payment_id = data.get('payment_id') or data.get('paymentId')
+    transaction_id = data.get('transaction_id') or data.get('transactionId')
     status = data.get('status')
     
-    contribution = Contribution.query.filter_by(moncash_payment_id=payment_id).first()
+    contribution = Contribution.query.filter_by(moncash_payment_id=payment_id).first() if payment_id else None
     
-    if contribution:
+    # Idempotence : un paiement déjà finalisé n'est jamais retraité
+    if contribution and contribution.status != ContributionStatus.COMPLETED:
         if status == 'completed':
             contribution.mark_completed()
             contribution.moncash_transaction_id = transaction_id
@@ -83,7 +91,7 @@ def stripe_connect_webhook():
         event = stripe.Webhook.construct_event(
             payload, sig_header, current_app.config['STRIPE_CONNECT_WEBHOOK_SECRET']
         )
-    except (ValueError, stripe.error.SignatureVerificationError):
+    except (ValueError, stripe.SignatureVerificationError):
         return jsonify({'error': 'Invalid signature'}), 401
     
     if event['type'] == 'transfer.paid':
