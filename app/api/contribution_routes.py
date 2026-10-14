@@ -2,11 +2,14 @@
 Routes pour les contributions (investissements)
 """
 
+from decimal import Decimal, InvalidOperation
+
 from flask import request, jsonify, current_app, url_for, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp
 from app.models import Contribution, Project, User, PaymentGatewayConfig
 from app.extensions import db
+from app.models.contribution import utc_now
 from app.utils.decorators import rate_limit
 from app.utils.payments import process_stripe_payment, process_paypal_payment, process_moncash_payment
 import stripe
@@ -41,28 +44,41 @@ def create_contribution(project_id):
     project = Project.query.get_or_404(project_id)
     
     # Vérifier si le projet accepte les contributions
-    data = request.get_json()
-    amount = data.get('amount')
+    data = request.get_json(silent=True) or {}
     
-    if not amount:
-        return jsonify({'error': 'Montant requis'}), 400
+    try:
+        amount = Decimal(str(data.get('amount')))
+        if not amount.is_finite() or amount <= 0:
+            raise InvalidOperation
+    except InvalidOperation:
+        return jsonify({'error': 'Montant requis et strictement positif'}), 400
     
-    can_accept, error = project.can_accept_contribution(amount)
-    if not can_accept:
-        return jsonify({'error': error}), 400
+    if data.get('payment_method') not in ('stripe', 'paypal', 'moncash'):
+        return jsonify({'error': 'Méthode de paiement invalide'}), 400
     
     # Récupérer le taux de change
     from app.utils.exchange_rates import get_exchange_rate
     
-    currency = data.get('currency', current_user.preferred_currency)
-    exchange_rate = get_exchange_rate(currency, 'HTG')
-    amount_htg = Decimal(str(amount)) * exchange_rate
+    currency = (data.get('currency') or current_user.preferred_currency).upper()
+    try:
+        exchange_rate = get_exchange_rate(currency, 'HTG')
+        project_rate = get_exchange_rate(currency, project.currency)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 503
+    amount_htg = amount * exchange_rate
+    
+    # Les bornes du projet sont exprimées dans sa propre devise
+    can_accept, error = project.can_accept_contribution(amount * project_rate)
+    if not can_accept:
+        return jsonify({'error': error}), 400
     
     # Créer la contribution
     contribution = Contribution(
         investor_id=current_user.id,
         project_id=project_id,
-        amount=Decimal(str(amount)),
+        amount=amount,
         currency=currency,
         amount_htg=amount_htg,
         exchange_rate=exchange_rate,
@@ -91,7 +107,7 @@ def create_contribution(project_id):
         # Mettre à jour l'ID de paiement
         if payment_intent:
             if payment_method == 'stripe':
-                contribution.stripe_payment_intent_id = payment_intent.id
+                contribution.stripe_payment_intent_id = payment_intent['id']
             elif payment_method == 'paypal':
                 contribution.paypal_order_id = payment_intent['id']
             elif payment_method == 'moncash':
@@ -194,7 +210,7 @@ def get_my_contributions():
     per_page = request.args.get('per_page', 20, type=int)
     status = request.args.get('status')
     
-    query = current_user.contributions
+    query = Contribution.query.filter_by(investor_id=current_user.id)
     
     if status:
         query = query.filter_by(status=status)
