@@ -61,8 +61,9 @@ def moncash_webhook():
     
     data = request.get_json(silent=True) or {}
     
-    payment_id = data.get('payment_id')
-    transaction_id = data.get('transaction_id')
+    # Les deux conventions de nommage coexistent dans le code (snake_case / camelCase)
+    payment_id = data.get('payment_id') or data.get('paymentId')
+    transaction_id = data.get('transaction_id') or data.get('transactionId')
     status = data.get('status')
     
     contribution = Contribution.query.filter_by(moncash_payment_id=payment_id).first() if payment_id else None
