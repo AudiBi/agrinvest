@@ -857,9 +857,8 @@ def invest(project_id):
                 return redirect(url_for('main.invest', project_id=project_id))
             
             payment_method = request.form.get('payment_method')
-            if payment_method not in ('moncash', 'paypal', 'cash'):
-                # Stripe exige la confirmation côté client (Stripe.js) : disponible via l'API uniquement
-                flash("Méthode de paiement non disponible depuis cette page.", 'warning')
+            if payment_method not in ('stripe', 'moncash', 'paypal', 'cash'):
+                flash("Méthode de paiement invalide.", 'warning')
                 return redirect(url_for('main.invest', project_id=project_id))
             
             # Vérifier si le projet accepte les contributions
@@ -873,7 +872,22 @@ def invest(project_id):
             message = request.form.get('message')
             
             # Calculer les valeurs par défaut
-            amount_htg = amount  # Si en HTG, sinon appliquer taux de change
+            amount_htg = amount
+            charge_amount, charge_currency, rate = amount, 'HTG', Decimal('1')
+            if payment_method == 'stripe':
+                # Stripe ne gère pas le HTG : la carte est débitée en USD au taux du jour
+                from app.utils.exchange_rates import get_exchange_rate
+                try:
+                    rate = get_exchange_rate('USD', 'HTG')
+                except RuntimeError:
+                    flash("Taux de change indisponible, réessayez plus tard.", 'danger')
+                    return redirect(url_for('main.invest', project_id=project_id))
+                charge_amount = (amount / rate).quantize(Decimal('0.01'))
+                charge_currency = 'USD'
+                if charge_amount < Decimal('0.50'):
+                    flash("Montant trop faible pour un paiement par carte.", 'warning')
+                    return redirect(url_for('main.invest', project_id=project_id))
+                amount_htg = (charge_amount * rate).quantize(Decimal('0.01'))
             gateway_fee = Decimal('0')
             conversion_fee = Decimal('0')
             platform_fee = Decimal('0')
@@ -883,8 +897,10 @@ def invest(project_id):
             contribution = Contribution(
                 investor_id=current_user.id,
                 project_id=project_id,
-                amount=amount,
-                currency='HTG',
+                amount=charge_amount,
+                currency=charge_currency,
+                exchange_rate=rate,
+                exchange_rate_date=utc_now(),
                 amount_htg=amount_htg,
                 gateway_fee=gateway_fee,
                 conversion_fee=conversion_fee,
@@ -907,8 +923,14 @@ def invest(project_id):
                 return redirect(url_for('main.investor_dashboard'))
             
             # La contribution reste « pending » jusqu'à la confirmation signée de la passerelle (webhook)
-            from app.utils.payments import process_paypal_payment, process_moncash_payment
+            from app.utils.payments import (
+                process_paypal_payment, process_moncash_payment, process_stripe_payment)
             try:
+                if payment_method == 'stripe':
+                    payment = process_stripe_payment(contribution)
+                    contribution.stripe_payment_intent_id = payment['id']
+                    db.session.commit()
+                    return redirect(url_for('main.pay_with_card', contribution_id=contribution.id))
                 if payment_method == 'moncash':
                     payment = process_moncash_payment(contribution)
                     contribution.moncash_payment_id = payment['payment_id']
@@ -941,6 +963,32 @@ def invest(project_id):
     
     return render_template('projects/invest.html', project=project)
 
+@bp.route('/payment/card/<int:contribution_id>')
+@login_required
+def pay_with_card(contribution_id):
+    """Page de saisie de carte (Stripe Payment Element)"""
+    contribution = Contribution.query.get_or_404(contribution_id)
+    if (contribution.investor_id != current_user.id
+            or contribution.payment_method != 'stripe'
+            or contribution.status != ContributionStatus.PENDING
+            or not contribution.stripe_payment_intent_id):
+        abort(404)
+    
+    from app.utils.stripe import retrieve_stripe_payment_intent
+    intent = retrieve_stripe_payment_intent(contribution.stripe_payment_intent_id)
+    if not intent or intent.status not in ('requires_payment_method', 'requires_confirmation', 'requires_action'):
+        flash("Ce paiement n'est plus modifiable.", 'warning')
+        return redirect(url_for('main.investor_dashboard'))
+    
+    return render_template(
+        'payments/card.html',
+        contribution=contribution,
+        client_secret=intent.client_secret,
+        stripe_public_key=current_app.config.get('STRIPE_PUBLIC_KEY'),
+        return_url=url_for('main.payment_success', _external=True),
+    )
+
+
 @bp.route('/payment/success')
 @login_required
 def payment_success():
@@ -964,6 +1012,10 @@ def download_contract(contribution_id):
     
     if contribution.investor_id != current_user.id and not current_user.is_admin:
         abort(403)
+    
+    if contribution.status != ContributionStatus.COMPLETED:
+        flash("Le contrat n'est disponible qu'après confirmation du paiement.", 'warning')
+        return redirect(url_for('main.investor_dashboard'))
     
     # Générer le PDF du contrat
     pdf = generate_contract_pdf(contribution)
