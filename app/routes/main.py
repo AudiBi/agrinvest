@@ -852,6 +852,15 @@ def invest(project_id):
     if request.method == 'POST':
         try:
             amount = Decimal(request.form.get('amount', 0))
+            if not amount.is_finite() or amount <= 0:
+                flash('Montant invalide.', 'warning')
+                return redirect(url_for('main.invest', project_id=project_id))
+            
+            payment_method = request.form.get('payment_method')
+            if payment_method not in ('moncash', 'paypal', 'cash'):
+                # Stripe exige la confirmation côté client (Stripe.js) : disponible via l'API uniquement
+                flash("Méthode de paiement non disponible depuis cette page.", 'warning')
+                return redirect(url_for('main.invest', project_id=project_id))
             
             # Vérifier si le projet accepte les contributions
             can_accept, error = project.can_accept_contribution(amount)
@@ -860,7 +869,6 @@ def invest(project_id):
                 flash(error, 'warning')
                 return redirect(url_for('main.project_detail', project_id=project_id))
             
-            payment_method = request.form.get('payment_method')
             is_anonymous = request.form.get('is_anonymous') == 'on'
             message = request.form.get('message')
             
@@ -893,7 +901,30 @@ def invest(project_id):
             db.session.add(contribution)
             db.session.commit()
             
-            flash('Contribution enregistrée avec succès !', 'success')
+            if payment_method == 'cash':
+                flash("Contribution enregistrée : elle sera confirmée à la remise des espèces "
+                      "à un point de collecte.", 'info')
+                return redirect(url_for('main.investor_dashboard'))
+            
+            # La contribution reste « pending » jusqu'à la confirmation signée de la passerelle (webhook)
+            from app.utils.payments import process_paypal_payment, process_moncash_payment
+            try:
+                if payment_method == 'moncash':
+                    payment = process_moncash_payment(contribution)
+                    contribution.moncash_payment_id = payment['payment_id']
+                else:
+                    payment = process_paypal_payment(contribution)
+                    contribution.paypal_order_id = payment['id']
+                db.session.commit()
+            except Exception as e:
+                contribution.mark_failed()
+                current_app.logger.error(f"Erreur création paiement {payment_method}: {e}")
+                flash("Le paiement n'a pas pu être initié. Veuillez réessayer.", 'danger')
+                return redirect(url_for('main.project_detail', project_id=project_id))
+            
+            if payment.get('approval_url'):
+                return redirect(payment['approval_url'])
+            flash('Contribution enregistrée, en attente de confirmation du paiement.', 'info')
             return redirect(url_for('main.investor_dashboard'))
             
         except Exception as e:
@@ -909,6 +940,21 @@ def invest(project_id):
         return redirect(url_for('main.project_detail', project_id=project_id))
     
     return render_template('projects/invest.html', project=project)
+
+@bp.route('/payment/success')
+@login_required
+def payment_success():
+    """Retour de la passerelle : la confirmation réelle arrive par webhook signé"""
+    flash('Paiement reçu. Votre contribution sera confirmée dès validation par la passerelle.', 'success')
+    return redirect(url_for('main.investor_dashboard'))
+
+
+@bp.route('/payment/cancel')
+@login_required
+def payment_cancel():
+    flash("Paiement annulé. Aucune somme n'a été débitée.", 'warning')
+    return redirect(url_for('main.investor_dashboard'))
+
 
 @bp.route('/contribution/<int:contribution_id>/contract')
 @login_required
