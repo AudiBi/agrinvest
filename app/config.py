@@ -11,7 +11,17 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     """Configuration de base (commune à tous les environnements)"""
 
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'change-me-in-production')
+    # Aucune valeur par défaut : Config.validate() refuse de démarrer sans clé
+    # (sauf développement/tests, qui définissent une clé jetable).
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+
+    @classmethod
+    def validate(cls):
+        """Vérifie la configuration au démarrage (appelé par create_app)."""
+        if not cls.SECRET_KEY:
+            raise RuntimeError("SECRET_KEY must be set (variable d'environnement)")
+        if not cls.SQLALCHEMY_DATABASE_URI:
+            raise RuntimeError("DATABASE_URL must be set")
 
     # =========================================================================
     # BASE DE DONNÉES
@@ -349,6 +359,10 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_HTTPONLY = True
     
+    # Clé jetable, uniquement pour le développement local
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-only-insecure-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+    
     # Désactiver certaines sécurités pour le développement
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
@@ -379,13 +393,15 @@ class TestingConfig(Config):
     """Configuration pour les tests unitaires"""
     TESTING = True
     DEBUG = True
+    SECRET_KEY = 'test-only-insecure-key'
+    JWT_SECRET_KEY = SECRET_KEY
     SESSION_COOKIE_SECURE = False
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
     
     # Base de données en mémoire
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    SQLALCHEMY_ENGINE_OPTIONS = {'pool_size': 5}
+    SQLALCHEMY_ENGINE_OPTIONS = {}  # pool_size invalide avec SQLite en mémoire (StaticPool)
     
     # Désactiver les services externes
     REDIS_URL = 'redis://localhost:6379/1'
@@ -447,9 +463,8 @@ class ProductionConfig(Config):
     LOG_LEVEL = 'WARNING'
     
     # Base de données PostgreSQL en production
+    # Vérifié au démarrage par Config.validate() (pas à l'import du module)
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("DATABASE_URL must be set in production")
     
     # Mode live pour les paiements
     PAYPAL_MODE = 'live'
@@ -518,7 +533,7 @@ config = {
     'production': ProductionConfig,
     'heroku': HerokuConfig,
     'docker': DockerConfig,
-    'default': DevelopmentConfig,
+    'default': ProductionConfig,
 }
 
 
@@ -528,8 +543,8 @@ config = {
 
 def get_config():
     """Retourne la configuration en fonction de l'environnement"""
-    env = os.environ.get('FLASK_ENV', 'development')
-    return config.get(env, config['default'])
+    env = os.environ.get('FLASK_ENV', 'production')
+    return config.get(env, config['production'])
 
 
 def init_config(app):

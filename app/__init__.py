@@ -64,7 +64,7 @@ def create_app(config_name=None):
     """
     
     if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
+        config_name = os.environ.get('FLASK_ENV', 'production')
     
     # Création de l'application
     app = Flask(__name__, instance_relative_config=True)
@@ -73,11 +73,9 @@ def create_app(config_name=None):
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
     # Chargement de la configuration
-    app.config.from_object(config[config_name])
-    
-    # S'assurer que la clé secrète est définie
-    if not app.config.get('SECRET_KEY'):
-        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    config_class = config[config_name]
+    config_class.validate()  # SECRET_KEY / DATABASE_URL obligatoires
+    app.config.from_object(config_class)
     
     # Création des dossiers nécessaires
     _create_directories(app)
