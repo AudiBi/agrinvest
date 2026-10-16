@@ -380,7 +380,7 @@ class DevelopmentConfig(Config):
     )
     
     # Mode test pour les paiements
-    STRIPE_PUBLIC_KEY = 'pk_test_...'
+    STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
     PAYPAL_MODE = 'sandbox'
     MONCASH_ENVIRONMENT = 'sandbox'
     

@@ -877,8 +877,8 @@ def invest(project_id):
             # Calculer les valeurs par défaut
             amount_htg = amount
             charge_amount, charge_currency, rate = amount, 'HTG', Decimal('1')
-            if payment_method == 'stripe':
-                # Stripe ne gère pas le HTG : la carte est débitée en USD au taux du jour
+            if payment_method in ('stripe', 'paypal'):
+                # Stripe et PayPal ne gèrent pas le HTG : débit en USD au taux du jour
                 from app.utils.exchange_rates import get_exchange_rate
                 try:
                     rate = get_exchange_rate('USD', 'HTG')
@@ -888,7 +888,7 @@ def invest(project_id):
                 charge_amount = (amount / rate).quantize(Decimal('0.01'))
                 charge_currency = 'USD'
                 if charge_amount < Decimal('0.50'):
-                    flash("Montant trop faible pour un paiement par carte.", 'warning')
+                    flash("Montant trop faible pour ce moyen de paiement.", 'warning')
                     return redirect(url_for('main.invest', project_id=project_id))
                 amount_htg = (charge_amount * rate).quantize(Decimal('0.01'))
             gateway_fee = Decimal('0')
@@ -996,6 +996,17 @@ def pay_with_card(contribution_id):
 @login_required
 def payment_success():
     """Retour de la passerelle : la confirmation réelle arrive par webhook signé"""
+    # Retour PayPal : ?token=<order_id>. On capture sans attendre le webhook (idempotent côté PayPal),
+    # uniquement pour une commande appartenant à l'utilisateur connecté.
+    order_id = request.args.get('token')
+    if order_id:
+        contribution = Contribution.query.filter_by(
+            paypal_order_id=order_id, investor_id=current_user.id).first()
+        if contribution and contribution.status == ContributionStatus.PENDING:
+            from app.utils.paypal import capture_paypal_order
+            from app.utils.payments import verify_payment
+            if capture_paypal_order(order_id) and verify_payment(contribution):
+                contribution.mark_completed()
     flash('Paiement reçu. Votre contribution sera confirmée dès validation par la passerelle.', 'success')
     return redirect(url_for('main.investor_dashboard'))
 

@@ -54,6 +54,7 @@ def test_gateway_failure_marks_failed(login, project, monkeypatch):
         raise RuntimeError('down')
 
     monkeypatch.setattr('app.utils.payments.process_paypal_payment', boom)
+    monkeypatch.setattr('app.utils.exchange_rates.get_exchange_rate', lambda a, b='HTG': Decimal('130'))
     invest(login, project, amount='500', payment_method='paypal')
     assert Contribution.query.one().status == ContributionStatus.FAILED
 
