@@ -22,3 +22,18 @@ def test_api_blueprints_are_registered(app):
     rules = {r.rule for r in app.url_map.iter_rules()}
     assert any(r.startswith('/api/v1/transfers') for r in rules)
     assert any(r.startswith('/api/v1/webhooks') for r in rules)
+
+
+def test_health_check_ok_and_not_rate_limited(client):
+    for _ in range(3):
+        resp = client.get('/health')
+        assert resp.status_code == 200
+        assert resp.get_json() == {'status': 'ok'}
+
+
+def test_health_check_reports_db_failure(client, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError('db down')
+
+    monkeypatch.setattr('app.extensions.db.session.execute', boom)
+    assert client.get('/health').status_code == 503
