@@ -232,7 +232,9 @@ class Project(db.Model):
             config = PlatformCommissionConfig(
                 percentage=Decimal('3.0'),
                 commission_type='platform_fee',
-                is_default=True
+                is_default=True,
+                min_amount_to_apply=Decimal('0'),
+                fixed_fee=Decimal('0'),
             )
         return config
 

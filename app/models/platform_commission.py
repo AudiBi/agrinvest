@@ -53,15 +53,18 @@ class PlatformCommissionConfig(db.Model):
     )
     
     def calculate_commission(self, amount):
-        if amount < self.min_amount_to_apply:
+        # Les defaults de colonnes ne s'appliquent qu'à l'INSERT : une config non persistée
+        # (repli quand la table est vide) a ces champs à None.
+        amount = Decimal(str(amount))
+        if amount < (self.min_amount_to_apply or 0):
             return Decimal(0)
         
-        percentage_commission = (Decimal(str(amount)) * self.percentage) / Decimal(100)
-        fixed_commission = self.fixed_fee
+        percentage_commission = (amount * self.percentage) / Decimal(100)
+        fixed_commission = self.fixed_fee or Decimal(0)
         total_commission = percentage_commission + fixed_commission
         
         if self.max_amount and amount > self.max_amount:
-            total_commission = total_commission * Decimal(0.5)
+            total_commission = total_commission * Decimal('0.5')
         
         return total_commission
     

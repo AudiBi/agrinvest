@@ -466,6 +466,16 @@ def _register_cli_commands(app):
         db.create_all()
         click.echo("✅ Base de données initialisée")
     
+    @app.cli.command('reconcile-payments')
+    def reconcile_payments_command():
+        """Confirme ou expire les contributions « pending » en interrogeant les passerelles"""
+        import click
+        from app.utils.reconciliation import reconcile_pending_contributions
+        stats = reconcile_pending_contributions()
+        click.echo(
+            f"Vérifiées: {stats['checked']} | confirmées: {stats['completed']} | "
+            f"expirées: {stats['expired']} | erreurs: {stats['errors']}")
+    
     @app.cli.command('seed-db')
     def seed_db_command():
         """Remplit la base de données avec des données de test"""

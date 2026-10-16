@@ -264,10 +264,14 @@ def _handle_payment_completed(resource):
     
     custom_id = resource.get('custom_id')
     if custom_id:
-        contribution = Contribution.query.get(int(custom_id))
-        if contribution and contribution.status == 'pending':
+        from app.utils.payments import CONFIRMABLE_STATUSES, payment_matches
+        contribution = db.session.get(Contribution, int(custom_id))
+        amount = resource.get('amount') or {}
+        if (contribution and contribution.status in CONFIRMABLE_STATUSES
+                and payment_matches(contribution, amount.get('value'), amount.get('currency_code'))):
             contribution.mark_completed()
-            db.session.commit()
+        elif contribution and contribution.status == 'pending':
+            current_app.logger.error(f"PayPal: montant/devise inattendus pour la contribution {contribution.id}")
 
 
 def _handle_refund_completed(resource):

@@ -138,10 +138,15 @@ def _handle_payment_success(payment_intent):
     
     contribution_id = payment_intent.get('metadata', {}).get('contribution_id')
     if contribution_id:
-        contribution = Contribution.query.get(int(contribution_id))
-        if contribution and contribution.status == 'pending':
+        from decimal import Decimal
+        from app.utils.payments import CONFIRMABLE_STATUSES, payment_matches
+        contribution = db.session.get(Contribution, int(contribution_id))
+        paid = Decimal(payment_intent.get('amount_received', payment_intent['amount'])) / 100
+        if (contribution and contribution.status in CONFIRMABLE_STATUSES
+                and payment_matches(contribution, paid, payment_intent.get('currency'))):
             contribution.mark_completed()
-            db.session.commit()
+        elif contribution and contribution.status == 'pending':
+            current_app.logger.error(f"Stripe: montant/devise inattendus pour la contribution {contribution.id}")
 
 
 def _handle_payment_failure(payment_intent):
