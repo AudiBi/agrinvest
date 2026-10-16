@@ -54,7 +54,9 @@ class Config:
     # Rate Limiting
     RATELIMIT_ENABLED = True
     RATELIMIT_DEFAULT = "200 per day;50 per hour"
-    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    # Stockage partagé entre workers (Redis si REDIS_URL est défini), sinon mémoire du processus
+    RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL') or 'memory://'
+    RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True  # Redis indisponible: dégradé, pas de 500
 
     # =========================================================================
     # EMAIL (Flask-Mail)

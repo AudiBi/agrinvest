@@ -8,7 +8,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timezone
 
 from app.models import User
-from app.extensions import db
+from app.extensions import db, login_throttle
 from app.utils.validators import validate_email, validate_password
 
 
@@ -26,6 +26,7 @@ def utc_now():
 # ============================================================================
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@login_throttle
 def login():
     """Page de connexion"""
     # Rediriger si déjà connecté

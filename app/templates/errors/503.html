@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Service indisponible{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 text-success">503</h1>
+    <h2>Service temporairement indisponible</h2>
+    <p class="mb-4">Le service est momentanément indisponible. Veuillez réessayer dans quelques instants.</p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-success">Retour à l'accueil</a>
+</div>
+{% endblock %}

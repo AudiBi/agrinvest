@@ -4,7 +4,7 @@ Routes principales de l'application web AgriInvest Haïti
 """
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app, session, send_file, jsonify
-from flask_login import login_required, current_user, logout_user
+from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from urllib.parse import urlparse, urljoin
@@ -18,7 +18,7 @@ from app.models import (
     PlatformCommissionConfig, AnalyticsEvent, Notification
 )
 from app.models.enums import ProjectStatus, ContributionStatus, UserRole
-from app.extensions import db
+from app.extensions import db, login_throttle
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.services.payment_service import PaymentService
@@ -287,6 +287,7 @@ def privacy():
 # ============================================================================
 
 @bp.route('/login', methods=['GET', 'POST'])
+@login_throttle
 def login():
     """Page de connexion"""
     if current_user.is_authenticated:
@@ -326,6 +327,8 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         role = request.form.get('role', 'investor')
+        if role not in ('investor', 'farmer'):
+            role = 'investor'  # jamais admin/agent/ambassadeur par auto-inscription
         phone = request.form.get('phone')
         country = request.form.get('country', 'HT')
         
