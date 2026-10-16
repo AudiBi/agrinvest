@@ -5,7 +5,11 @@ Les fonctions process_* retournent un dict (avec 'id' et 'approval_url' quand ap
 lèvent RuntimeError ; verify_payment et process_refund échouent « fermé » (False).
 """
 
+from decimal import Decimal, InvalidOperation
+
 from flask import current_app
+
+from app.models.enums import ContributionStatus
 
 from app.utils import stripe as stripe_gateway
 from app.utils import paypal as paypal_gateway
@@ -40,6 +44,21 @@ def process_moncash_payment(contribution):
     return {**payment, 'approval_url': payment.get('payment_url')}
 
 
+# Une confirmation de la passerelle (argent reçu) fait foi, même après un échec/expiration local.
+# Jamais depuis REFUNDED ni COMPLETED : un webhook rejoué ne doit pas ressusciter une contribution.
+CONFIRMABLE_STATUSES = (ContributionStatus.PENDING, ContributionStatus.FAILED)
+
+
+def payment_matches(contribution, amount, currency):
+    """Vrai si le montant (unités majeures) et la devise payés sont ceux attendus."""
+    try:
+        paid = Decimal(str(amount)).quantize(Decimal('0.01'))
+    except (InvalidOperation, TypeError, ValueError):
+        return False
+    expected = Decimal(contribution.amount).quantize(Decimal('0.01'))
+    return paid == expected and str(currency or '').upper() == str(contribution.currency).upper()
+
+
 def _gateway_id(contribution):
     """(méthode, identifiant stocké côté serveur) ; jamais l'identifiant fourni par le client."""
     method = contribution.payment_method
@@ -64,10 +83,17 @@ def verify_payment(contribution, client_payment_id=None):
             intent
             and intent.status == 'succeeded'
             and str(intent.metadata.get('contribution_id')) == str(contribution.id)
+            and payment_matches(contribution, Decimal(intent.amount_received) / 100, intent.currency)
         )
     if method == 'paypal':
         order = paypal_gateway.retrieve_paypal_payment(gateway_id)
-        return bool(order and order.get('status') == 'COMPLETED')
+        if not order or order.get('status') != 'COMPLETED':
+            return False
+        try:
+            paid = order['purchase_units'][0]['amount']
+            return payment_matches(contribution, paid['value'], paid['currency_code'])
+        except (KeyError, IndexError, TypeError):
+            return False
     if method == 'moncash':
         payment = moncash_gateway.retrieve_moncash_payment(gateway_id)
         return bool(payment and str(payment.get('status', '')).lower() == 'completed')

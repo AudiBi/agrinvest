@@ -180,6 +180,10 @@ class Contribution(db.Model):
                 amount_currency='HTG',
                 commission_percentage=config.percentage,
                 commission_amount=self.platform_commission_amount,
+                fixed_fee_amount=config.fixed_fee or 0,
+                # La commission est calculée sur amount_htg : déjà en HTG, taux 1
+                commission_amount_htg=self.platform_commission_amount,
+                exchange_rate=1,
                 net_to_project=self.amount_htg - self.platform_commission_amount
             )
             db.session.add(earning)
