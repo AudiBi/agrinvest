@@ -5,8 +5,6 @@ Décorateurs pour les routes
 from functools import wraps
 from flask import jsonify, request, current_app
 from flask_login import current_user
-from redis import Redis
-import time
 
 
 def login_required(f):
@@ -81,29 +79,12 @@ def agent_required(f):
 
 def rate_limit(limit=100, per=60):
     """
-    Limite le nombre de requêtes par IP
-    limit: nombre de requêtes max
-    per: période en secondes
+    Limite le nombre de requêtes par IP : `limit` requêtes par `per` secondes.
+    Délègue à Flask-Limiter (stockage configurable, désactivable via RATELIMIT_ENABLED).
     """
     def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            redis_client = Redis.from_url(current_app.config['REDIS_URL'])
-            ip = request.remote_addr
-            key = f'rate_limit:{ip}:{f.__name__}'
-            
-            current = redis_client.get(key)
-            
-            if current and int(current) >= limit:
-                return jsonify({'error': 'Trop de requêtes. Veuillez réessayer plus tard.'}), 429
-            
-            pipe = redis_client.pipeline()
-            pipe.incr(key, 1)
-            pipe.expire(key, per)
-            pipe.execute()
-            
-            return f(*args, **kwargs)
-        return decorated_function
+        from app.extensions import rate_limit as limiter_rate_limit
+        return limiter_rate_limit(limit=limit, per=per)(f)
     return decorator
 
 

@@ -78,32 +78,53 @@ class AuthService:
         return True, user
     
     @staticmethod
-    def generate_reset_token(email: str) -> str:
-        """Génère un token de réinitialisation"""
+    def _serializer():
         from itsdangerous import URLSafeTimedSerializer
         from flask import current_app
-        
-        serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        return serializer.dumps(email, salt='password-reset-salt')
-    
+        return URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+
+    @staticmethod
+    def _password_fingerprint(user: User) -> str:
+        import hashlib
+        return hashlib.sha256((user.password_hash or '').encode()).hexdigest()[:16]
+
+    @staticmethod
+    def generate_reset_token(email: str) -> str:
+        """Génère un token de réinitialisation, lié au mot de passe actuel (donc à usage unique)"""
+        user = User.query.filter_by(email=email).first()
+        fingerprint = AuthService._password_fingerprint(user) if user else ''
+        return AuthService._serializer().dumps([email, fingerprint], salt='password-reset-salt')
+
     @staticmethod
     def verify_reset_token(token: str, expiration: int = 3600) -> User:
-        """Vérifie un token de réinitialisation"""
-        from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-        from flask import current_app
-        
-        serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        
+        """Vérifie un token de réinitialisation (expiré, falsifié ou déjà utilisé -> None)"""
+        from itsdangerous import SignatureExpired, BadSignature
+
         try:
-            email = serializer.loads(
-                token,
-                salt='password-reset-salt',
-                max_age=expiration
-            )
-            return User.query.filter_by(email=email).first()
+            email, fingerprint = AuthService._serializer().loads(
+                token, salt='password-reset-salt', max_age=expiration)
+        except (SignatureExpired, BadSignature, TypeError, ValueError):
+            return None
+        user = User.query.filter_by(email=email).first()
+        if not user or fingerprint != AuthService._password_fingerprint(user):
+            return None  # le mot de passe a changé depuis l'émission du lien
+        return user
+
+    @staticmethod
+    def generate_email_token(email: str) -> str:
+        """Token de vérification d'adresse email"""
+        return AuthService._serializer().dumps(email, salt='email-verify-salt')
+
+    @staticmethod
+    def verify_email_token(token: str, expiration: int = 86400 * 3) -> User:
+        from itsdangerous import SignatureExpired, BadSignature
+
+        try:
+            email = AuthService._serializer().loads(token, salt='email-verify-salt', max_age=expiration)
         except (SignatureExpired, BadSignature):
             return None
-    
+        return User.query.filter_by(email=email).first()
+
     @staticmethod
     def reset_password(token: str, new_password: str) -> bool:
         """Réinitialise le mot de passe"""

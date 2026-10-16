@@ -14,6 +14,7 @@ def app(monkeypatch):
     monkeypatch.setenv('FLASK_ENV', 'testing')
     app = create_app('testing')
     app.config.update(
+        SESSION_PROTECTION=None,  # les tests posent la session à la main (login_as), sans _id
         MONCASH_WEBHOOK_SECRET='moncash-test-secret',
         WISE_WEBHOOK_SECRET='wise-test-secret',
     )
@@ -51,3 +52,53 @@ def project(app):
     db.session.add(p)
     db.session.commit()
     return p
+
+
+def make_user(email, role=UserRole.INVESTOR, is_admin=False, name='Test User', **extra):
+    user = User(email=email, password='Passw0rd!x', role=role, name=name, is_admin=is_admin, **extra)
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+@pytest.fixture()
+def admin(app):
+    return make_user('admin@example.com', role=UserRole.ADMIN, is_admin=True, name='Admin')
+
+
+@pytest.fixture()
+def other_investor(app):
+    return make_user('other@example.com', name='Other Investor')
+
+
+@pytest.fixture()
+def farmer_user(app):
+    return make_user('farmer2@example.com', role=UserRole.FARMER, name='Other Farmer')
+
+
+def login_as(client, user):
+    # Le contexte d'application des tests reste ouvert : Flask-Login met l'utilisateur en cache
+    # dans `g` entre deux requêtes du client, ce qui masquerait le changement de session.
+    from flask import g
+    g.pop('_login_user', None)
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user.id)
+        sess['_fresh'] = True
+    return client
+
+
+@pytest.fixture()
+def limited_app(monkeypatch):
+    """Application avec le limiteur de débit réellement actif (stockage mémoire)."""
+    from app.config import TestingConfig
+    from app.extensions import limiter
+    monkeypatch.setattr(TestingConfig, 'RATELIMIT_ENABLED', True)
+    monkeypatch.setattr(TestingConfig, 'RATELIMIT_STORAGE_URI', 'memory://')
+    app = create_app('testing')
+    app.config['SESSION_PROTECTION'] = None
+    with app.app_context():
+        _db.create_all()
+        limiter.reset()
+        yield app
+        _db.session.remove()
+        _db.drop_all()

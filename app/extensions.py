@@ -46,7 +46,6 @@ cache = Cache()
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
 )
 
 # File d'attente (Celery)
@@ -173,6 +172,20 @@ def rate_limit(limit, per=3600, methods=None):
     def decorator(f):
         return limiter.limit(f"{limit} per {per} seconds", methods=methods)(f)
     return decorator
+
+
+def _login_email_key():
+    """Clé de limitation par compte ciblé (corps JSON ou formulaire)."""
+    from flask import request
+    payload = request.get_json(silent=True) or {}
+    email = (payload.get('email') or request.form.get('email') or '').strip().lower()
+    return f"login:{email}" if email else get_remote_address()
+
+
+def login_throttle(f):
+    """Limite les tentatives de connexion : par IP ET par compte visé (anti brute-force distribué)."""
+    f = limiter.limit("10 per hour", key_func=_login_email_key, methods=["POST"])(f)
+    return limiter.limit("20 per hour", methods=["POST"])(f)
 
 
 def cached(timeout=300, key_prefix=None):

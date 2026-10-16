@@ -89,6 +89,14 @@ def create_app(config_name=None):
     login_manager.login_message_category = 'warning'
     login_manager.session_protection = 'strong'
     
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        """API : 401 JSON (pas de redirection HTML vers la page de connexion)"""
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Authentification requise', 'code': 401}), 401
+        flash(login_manager.login_message, login_manager.login_message_category)
+        return redirect(url_for(login_manager.login_view, next=request.full_path.rstrip('?')))
+    
     # Configuration de la session
     @app.before_request
     def make_session_permanent():
