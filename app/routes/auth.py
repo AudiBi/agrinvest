@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from app.models import User
 from app.extensions import db, login_throttle
+from app.services.email_service import EmailService
 from app.utils.validators import validate_email, validate_password
 
 
@@ -141,6 +142,8 @@ def register():
             
             db.session.add(user)
             db.session.commit()
+            
+            EmailService.send_welcome_email(user)
             
             # Connexion automatique après inscription
             login_user(user)

@@ -1,0 +1,7 @@
+{% extends 'email/_layout.html' %}
+{% block body %}
+<h1>Le projet est financé !</h1>
+<p>Bonjour {{ contribution.investor.name }},</p>
+<p>Le projet <strong>{{ project.title }}</strong>, auquel vous avez contribué, a atteint son objectif de financement. Merci de votre confiance.</p>
+<p><a class="button" href="{{ base_url }}{{ url_for('main.project_detail', project_id=project.id) }}">Voir le projet</a></p>
+{% endblock %}

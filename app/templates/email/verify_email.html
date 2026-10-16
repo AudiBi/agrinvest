@@ -1,0 +1,7 @@
+{% extends 'email/_layout.html' %}
+{% block body %}
+<h1>Confirmez votre adresse email</h1>
+<p>Bonjour {{ user.name }},</p>
+<p>Cliquez sur le bouton ci-dessous pour confirmer votre adresse email (lien valable 3 jours) :</p>
+<p><a class="button" href="{{ base_url }}{{ url_for('main.verify_email', token=token) }}">Confirmer mon adresse email</a></p>
+{% endblock %}

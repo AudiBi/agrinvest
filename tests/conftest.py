@@ -9,6 +9,17 @@ from app.models import Project, User
 from app.models.enums import ProjectStatus, UserRole
 
 
+@pytest.fixture(autouse=True)
+def fast_password_hashing(monkeypatch):
+    """Hachage allégé pour les tests uniquement (le hachage de production, ~1 s, reste inchangé).
+
+    check_password_hash lit la méthode dans le hash lui-même : la vérification fonctionne pareil.
+    """
+    from werkzeug.security import generate_password_hash as real_hash
+    monkeypatch.setattr('app.models.user.generate_password_hash',
+                        lambda password, method='pbkdf2:sha256': real_hash(password, method='pbkdf2:sha256:1000'))
+
+
 @pytest.fixture()
 def app(monkeypatch):
     monkeypatch.setenv('FLASK_ENV', 'testing')

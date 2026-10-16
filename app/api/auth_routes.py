@@ -78,6 +78,9 @@ def register():
     db.session.add(user)
     db.session.commit()
     
+    if not EmailService.send_welcome_email(user):
+        current_app.logger.error(f"Échec d'envoi de l'email de bienvenue à l'utilisateur {user.id}")
+    
     # Connexion automatique
     login_user(user)
     
@@ -217,6 +220,18 @@ def reset_password():
         return jsonify({'error': 'Token invalide ou expiré'}), 400
     
     return jsonify({'message': 'Mot de passe réinitialisé avec succès'}), 200
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+@login_required
+@rate_limit(limit=3, per=3600)
+def resend_verification():
+    """Renvoie le lien de vérification de l'adresse email"""
+    if current_user.is_verified:
+        return jsonify({'message': 'Adresse déjà vérifiée'}), 200
+    if not EmailService.send_verification_email(current_user):
+        return jsonify({'error': "L'email n'a pas pu être envoyé, réessayez plus tard"}), 503
+    return jsonify({'message': 'Email de vérification envoyé'}), 200
 
 
 @auth_bp.route('/verify-email/<token>', methods=['GET'])
