@@ -229,11 +229,11 @@ def contact():
         message = request.form.get('message')
         
         # Envoyer l'email
-        try:
-            EmailService.send_contact_message(name, email, subject, message)
+        if not (name and email and message):
+            flash('Nom, email et message sont requis.', 'warning')
+        elif EmailService.send_contact_message(name, email, subject, message):
             flash('Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.', 'success')
-        except Exception as e:
-            current_app.logger.error(f"Erreur envoi email: {e}")
+        else:
             flash('Une erreur est survenue. Veuillez réessayer plus tard.', 'danger')
         
         return redirect(url_for('main.contact'))
@@ -401,15 +401,27 @@ def forgot_password():
         
         if user:
             token = AuthService.generate_reset_token(email)
-            EmailService.send_password_reset_email(user, token)
-            flash('Un email de réinitialisation vous a été envoyé.', 'success')
-        else:
-            # Ne pas révéler si l'email existe ou non (sécurité)
-            flash('Si cet email existe, vous recevrez un lien de réinitialisation.', 'info')
+            if not EmailService.send_password_reset_email(user, token):
+                current_app.logger.error(f"Échec d'envoi de l'email de réinitialisation à l'utilisateur {user.id}")
+        # Même message dans tous les cas : ne révèle pas si l'adresse existe
+        flash('Si cet email existe, vous recevrez un lien de réinitialisation.', 'info')
         
         return redirect(url_for('main.login'))
     
     return render_template('forgot_password.html')
+
+
+@bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Confirmation de l'adresse email (lien reçu par email)"""
+    user = AuthService.verify_email_token(token)
+    if not user:
+        flash('Lien de vérification invalide ou expiré.', 'danger')
+        return redirect(url_for('main.login'))
+    if not user.is_verified:
+        user.verify_email()
+    flash('Votre adresse email est confirmée. Merci !', 'success')
+    return redirect(url_for('main.dashboard') if current_user.is_authenticated else url_for('main.login'))
 
 
 @bp.route('/reset-password/<token>', methods=['GET', 'POST'])
