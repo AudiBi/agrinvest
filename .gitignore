@@ -402,3 +402,6 @@ celerybeat.pid
 # Fichiers générés
 app/temp_pdfs/
 /python
+
+# Modèle de configuration (sans secrets)
+!.env.example
