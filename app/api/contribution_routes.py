@@ -60,6 +60,8 @@ def create_contribution(project_id):
     from app.utils.exchange_rates import get_exchange_rate
     
     currency = (data.get('currency') or current_user.preferred_currency).upper()
+    if data['payment_method'] in ('stripe', 'paypal') and currency == 'HTG':
+        return jsonify({'error': "Ce moyen de paiement n'accepte pas le HTG : choisissez USD, EUR ou CAD"}), 400
     try:
         exchange_rate = get_exchange_rate(currency, 'HTG')
         project_rate = get_exchange_rate(currency, project.currency)

@@ -47,6 +47,16 @@ def stripe_webhook():
                 return jsonify({'status': 'amount_mismatch'}), 200
             contribution.mark_completed()
     
+    elif event['type'] == 'charge.refunded':
+        charge = event['data']['object']
+        contribution = Contribution.query.filter_by(
+            stripe_payment_intent_id=charge.get('payment_intent')).first()
+        if contribution and charge.get('refunded'):  # remboursement TOTAL uniquement
+            contribution.mark_refunded()
+        elif contribution:
+            current_app.logger.warning(
+                f"Stripe: remboursement partiel de la contribution {contribution.id} ignoré (traitement manuel)")
+    
     elif event['type'] == 'payment_intent.payment_failed':
         payment_intent = event['data']['object']
         contribution = Contribution.query.filter_by(
