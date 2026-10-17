@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Recherche : {{ query }} - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="h3 mb-4">Résultats pour « {{ query }} »</h1>
+
+    <h2 class="h5">Projets ({{ projects|length }})</h2>
+    {% for project in projects %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <a href="{{ url_for('main.project_detail', project_id=project.id) }}" class="h6 stretched-link">{{ project.title }}</a>
+            <p class="mb-0 text-muted small">{{ project.description|truncate(160) }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Aucun projet trouvé.</p>
+    {% endfor %}
+
+    <h2 class="h5 mt-4">Formations ({{ trainings|length }})</h2>
+    {% for training in trainings %}
+    <div class="card mb-2">
+        <div class="card-body">
+            <a href="{{ url_for('main.training_detail', training_id=training.id) }}" class="h6 stretched-link">{{ training.title_ht }}</a>
+            <p class="mb-0 text-muted small">{{ (training.description_ht or '')|truncate(160) }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Aucune formation trouvée.</p>
+    {% endfor %}
+</div>
+{% endblock %}

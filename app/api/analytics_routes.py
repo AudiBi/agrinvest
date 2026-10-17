@@ -7,16 +7,19 @@ from flask_login import login_required, current_user
 from app.api import api_bp
 from app.models import AnalyticsEvent, User, Project, Contribution
 from app.extensions import db
-from app.utils.decorators import admin_required
+from app.utils.decorators import admin_required, rate_limit
 
 
 analytics_bp = Blueprint('analytics', __name__, url_prefix='/analytics')
 
 
 @analytics_bp.route('/track', methods=['POST'])
+@rate_limit(limit=120, per=60)  # endpoint public : on borne l'écriture en base par IP
 def track_event():
     """Enregistre un événement analytique"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data.get('event_type'), str) or not data['event_type'] or len(data['event_type']) > 50:
+        return jsonify({'error': 'event_type requis (50 caractères max)'}), 400
     
     event = AnalyticsEvent(
         event_type=data['event_type'],
