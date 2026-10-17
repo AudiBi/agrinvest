@@ -2,6 +2,7 @@
 Routes pour les contributions (investissements)
 """
 
+from app.utils.pagination import per_page_arg
 from decimal import Decimal, InvalidOperation
 
 from flask import request, jsonify, current_app, url_for, Blueprint
@@ -212,7 +213,7 @@ def refund_contribution(contribution_id):
 def get_my_contributions():
     """Récupère mes contributions"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     status = request.args.get('status')
     
     query = Contribution.query.filter_by(investor_id=current_user.id)

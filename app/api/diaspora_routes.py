@@ -2,6 +2,7 @@
 Routes pour les campagnes diaspora
 """
 
+from app.utils.pagination import per_page_arg
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from flask import request, jsonify, Blueprint
@@ -28,7 +29,7 @@ def _percentage(value, name):
 def list_campaigns():
     """Liste les campagnes diaspora actives"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 12, type=int)
+    per_page = per_page_arg(12)
     country = request.args.get('country')  # Filtrer par pays cible
     
     query = DiasporaCampaign.query.filter_by(status='active')

@@ -2,6 +2,7 @@
 Routes pour les transferts internationaux
 """
 
+from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
@@ -49,7 +50,7 @@ def get_transfer_partners():
 def list_transfer_batches():
     """Liste tous les lots de transfert"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     status = request.args.get('status')
     
     query = FundTransfer.query

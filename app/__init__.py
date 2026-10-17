@@ -77,6 +77,15 @@ def create_app(config_name=None):
     config_class.validate()  # SECRET_KEY / DATABASE_URL obligatoires
     app.config.from_object(config_class)
     
+    # Les colonnes DateTime sont naïves et écrites en UTC : sous PostgreSQL, une session dans un autre
+    # fuseau décalerait les valeurs reçues avec un fuseau (utc_now()) par rapport aux comparaisons naïves.
+    if str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('postgres'):
+        engine_options = dict(app.config.get('SQLALCHEMY_ENGINE_OPTIONS') or {})
+        connect_args = dict(engine_options.get('connect_args') or {})
+        connect_args.setdefault('options', '-c timezone=utc')
+        engine_options['connect_args'] = connect_args
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
+
     # Création des dossiers nécessaires
     _create_directories(app)
     
