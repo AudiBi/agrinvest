@@ -404,8 +404,8 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
     
-    # Base de données en mémoire
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    # SQLite en mémoire par défaut ; TEST_DATABASE_URL (PostgreSQL) pour tester comme en production
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
     SQLALCHEMY_ENGINE_OPTIONS = {}  # pool_size invalide avec SQLite en mémoire (StaticPool)
     
     # Désactiver les services externes
