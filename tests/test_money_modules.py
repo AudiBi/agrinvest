@@ -292,3 +292,11 @@ def test_admin_dashboard_and_user_listing(admin_client, investor):
     body = admin_client.get(f'{ADMIN}/dashboard').get_json()
     assert body['stats']['total_users'] >= 2
     assert admin_client.get(f'{ADMIN}/users?role=investor').status_code == 200
+
+
+def test_batch_source_country_is_a_two_letter_code(admin_client, investor, project):
+    c = completed_contribution(investor, project)
+    bad = admin_client.post(f'{TRANSFERS}/batches', json=batch_payload([c.id], source_country='INTL'))
+    assert bad.status_code == 400 and FundTransfer.query.count() == 0
+    assert admin_client.post(f'{TRANSFERS}/batches', json=batch_payload([c.id])).status_code == 201
+    assert FundTransfer.query.one().source_country == 'ZZ'

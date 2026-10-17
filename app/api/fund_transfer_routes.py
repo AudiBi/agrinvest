@@ -96,6 +96,11 @@ def create_transfer_batch():
     if not contributions:
         return jsonify({'error': 'Aucune contribution valide trouvée'}), 400
 
+    # Colonne varchar(2) : code pays ISO ; « ZZ » (code réservé) quand l'origine est inconnue ou multiple
+    source_country = str(data.get('source_country') or 'ZZ').upper()
+    if not (len(source_country) == 2 and source_country.isalpha()):
+        return jsonify({'error': 'source_country doit être un code pays à 2 lettres'}), 400
+    
     included_ids = [c.id for c in contributions]
     skipped_ids = sorted(set(contribution_ids) - set(included_ids))
 
@@ -107,7 +112,7 @@ def create_transfer_batch():
     
     transfer = FundTransfer(
         batch_id=batch_id,
-        source_country='INTL',
+        source_country=source_country,
         source_gateway=data.get('source_gateway', 'wise'),
         destination_bank=data.get('destination_bank'),
         destination_account=data.get('destination_account'),
