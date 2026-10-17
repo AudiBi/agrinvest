@@ -818,12 +818,18 @@ def publish_project(project_id):
     if project.farmer_id != current_user.id and not current_user.is_admin:
         abort(403)
     
+    if project.status not in ('draft', 'pending'):
+        flash('Ce projet ne peut plus être publié.', 'warning')
+        return redirect(url_for('main.project_detail', project_id=project.id))
+
     if not project.image_url:
         flash('Veuillez ajouter une image avant de publier', 'warning')
         return redirect(url_for('main.edit_project', project_id=project.id))
-    
-    project.publish()
-    flash('Projet publié avec succès !', 'success')
+
+    if project.submit_for_publication():
+        flash('Projet publié avec succès !', 'success')
+    else:
+        flash('Projet soumis : il sera publié après validation par un administrateur.', 'info')
     return redirect(url_for('main.project_detail', project_id=project.id))
 
 

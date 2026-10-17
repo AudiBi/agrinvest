@@ -210,6 +210,20 @@ class Project(db.Model):
             self.status = ProjectStatus.FUNDED
         db.session.commit()
 
+    def submit_for_publication(self):
+        """Publie le projet, ou le place en file de modération si REQUIRE_PROJECT_APPROVAL est actif.
+
+        Retourne True si le projet est publié, False s'il attend la validation d'un administrateur.
+        """
+        from flask import current_app
+        if current_app.config.get('REQUIRE_PROJECT_APPROVAL'):
+            self.status = ProjectStatus.PENDING
+            self.is_published = False
+            db.session.commit()
+            return False
+        self.publish()
+        return True
+
     def publish(self):
         self.is_published = True
         self.status = ProjectStatus.PUBLISHED

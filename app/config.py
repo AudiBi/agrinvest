@@ -303,6 +303,8 @@ class Config:
     MAX_PROJECT_TITLE_LENGTH = 200
     MAX_USER_NAME_LENGTH = 100
     MAX_CONTRIBUTION_MESSAGE_LENGTH = 500
+    # Si vrai, un agriculteur « publie » en réalité en soumettant son projet à un administrateur
+    REQUIRE_PROJECT_APPROVAL = os.environ.get('REQUIRE_PROJECT_APPROVAL', 'false').lower() == 'true'
     PENDING_PAYMENT_TTL_HOURS = 24  # au-delà, une contribution non payée est expirée (réconciliation)
     MIN_CONTRIBUTION_AMOUNT = 100  # 100 HTG minimum
     MAX_CONTRIBUTION_AMOUNT = 10000000  # 10M HTG maximum
