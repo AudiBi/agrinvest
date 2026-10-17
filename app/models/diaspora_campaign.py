@@ -49,6 +49,29 @@ class DiasporaCampaign(db.Model):
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     completed_at = db.Column(db.DateTime, nullable=True)
 
+    @classmethod
+    def campaigns_for(cls, contribution):
+        """Campagnes actives du projet dont le pays cible inclut celui de l'investisseur."""
+        import json
+        matching = []
+        for campaign in cls.query.filter_by(project_id=contribution.project_id, status='active').all():
+            try:
+                countries = json.loads(campaign.target_countries or '[]')
+            except ValueError:
+                countries = []
+            if contribution.investor_country in countries:
+                matching.append(campaign)
+        return matching
+
+    def record_contribution(self, contribution):
+        self.contributions_count = (self.contributions_count or 0) + 1
+        self.total_amount_raised = (self.total_amount_raised or Decimal('0')) + contribution.amount_htg
+
+    def remove_contribution(self, contribution):
+        self.contributions_count = max(0, (self.contributions_count or 0) - 1)
+        self.total_amount_raised = max(Decimal('0'),
+                                       (self.total_amount_raised or Decimal('0')) - contribution.amount_htg)
+
     def to_dict(self):
         return {
             'id': self.id,

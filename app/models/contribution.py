@@ -191,8 +191,24 @@ class Contribution(db.Model):
             # Recalculer net_amount_htg
             self.net_amount_htg = self.amount_htg - self.platform_commission_amount - self.gateway_fee - self.conversion_fee - self.platform_fee
         
+        self._credit_group_and_campaigns()
         self.project.add_contribution(self.amount_htg)
         db.session.commit()
+
+    def _credit_group_and_campaigns(self):
+        """Cagnotte de groupe et campagnes diaspora ne sont créditées qu'à la confirmation du paiement."""
+        from app.models.diaspora_campaign import DiasporaCampaign
+        for campaign in DiasporaCampaign.campaigns_for(self):
+            campaign.record_contribution(self)
+        if self.group_id and self.group:
+            self.group.add_contribution(self.amount)  # montant dans la devise de la cagnotte
+
+    def _debit_group_and_campaigns(self):
+        from app.models.diaspora_campaign import DiasporaCampaign
+        for campaign in DiasporaCampaign.campaigns_for(self):
+            campaign.remove_contribution(self)
+        if self.group_id and self.group:
+            self.group.remove_contribution(self.amount)
 
     def _cancel_platform_earnings(self):
         """Annule la commission d'une contribution remboursée (si elle n'est pas déjà versée)."""
@@ -231,6 +247,7 @@ class Contribution(db.Model):
         self.status = ContributionStatus.REFUNDED
         self.refunded_at = utc_now()
         self._cancel_platform_earnings()
+        self._debit_group_and_campaigns()
         self._cancel_platform_earnings()
         if self.project and self.amount_htg:
             self.project.amount_raised -= self.amount_htg

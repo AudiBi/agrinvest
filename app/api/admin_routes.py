@@ -77,6 +77,21 @@ def verify_user(user_id):
     return jsonify({'message': 'Utilisateur vérifié'}), 200
 
 
+@admin_bp.route('/users/<int:user_id>/approve-ambassador', methods=['POST'])
+@login_required
+@admin_required
+def approve_ambassador(user_id):
+    """Accorde le rôle d'ambassadeur à un investisseur de la diaspora"""
+    user = User.query.get_or_404(user_id)
+    if user.role == 'ambassador':
+        return jsonify({'message': 'Déjà ambassadeur'}), 200
+    if user.role != 'investor' or not user.is_diaspora:
+        return jsonify({'error': 'Seul un investisseur de la diaspora peut devenir ambassadeur'}), 409
+    user.role = 'ambassador'
+    db.session.commit()
+    return jsonify({'message': 'Rôle ambassadeur accordé'}), 200
+
+
 @admin_bp.route('/users/<int:user_id>/ban', methods=['POST'])
 @login_required
 @admin_required
