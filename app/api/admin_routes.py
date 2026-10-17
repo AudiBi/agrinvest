@@ -135,7 +135,11 @@ def get_pending_projects():
 def approve_project(project_id):
     """Approuve un projet pour publication"""
     project = Project.query.get_or_404(project_id)
-    
+
+    # Un projet déjà publié, financé ou clos ne doit pas repasser en « published »
+    if project.status not in ('pending', 'draft'):
+        return jsonify({'error': f'Un projet « {project.status} » ne peut pas être approuvé'}), 409
+
     project.is_verified = True
     project.publish()
     
@@ -152,9 +156,12 @@ def reject_project(project_id):
     """Rejette un projet"""
     project = Project.query.get_or_404(project_id)
     
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     reason = data.get('reason', '')
-    
+
+    if project.status not in ('pending', 'draft'):
+        return jsonify({'error': f'Un projet « {project.status} » ne peut pas être rejeté'}), 409
+
     project.status = 'draft'
     project.is_published = False
     db.session.commit()

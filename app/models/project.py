@@ -225,7 +225,10 @@ class Project(db.Model):
              (PlatformCommissionConfig.valid_until >= utc_now())),
             (PlatformCommissionConfig.project_category.is_(None) | 
              (PlatformCommissionConfig.project_category == self.category))
-        ).order_by(PlatformCommissionConfig.is_default.desc()).first()
+        ).order_by(
+            PlatformCommissionConfig.project_category.is_(None).asc(),  # catégorie du projet d'abord
+            PlatformCommissionConfig.is_default.desc()
+        ).first()
         
         if not config:
             from app.models.platform_commission import PlatformCommissionConfig

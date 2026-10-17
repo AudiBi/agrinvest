@@ -3,7 +3,7 @@ Modèles pour les commissions de la plateforme et du CEO
 """
 
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import Index, CheckConstraint
 from app.extensions import db
 from app.models.enums import CommissionType
@@ -65,6 +65,10 @@ class PlatformCommissionConfig(db.Model):
         
         if self.max_amount and amount > self.max_amount:
             total_commission = total_commission * Decimal('0.5')
+
+        total_commission = total_commission.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        total_commission = total_commission.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         
         return total_commission
     
@@ -115,6 +119,8 @@ class PlatformEarning(db.Model):
     
     created_at = db.Column(db.DateTime, default=utc_now, index=True)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+    
+    project = db.relationship('Project', foreign_keys=[project_id])
     
     __table_args__ = (
         CheckConstraint('commission_amount >= 0', name='check_positive_commission'),

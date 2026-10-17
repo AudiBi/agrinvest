@@ -187,6 +187,9 @@ def refund_contribution(contribution_id):
     
     if contribution.status != 'completed':
         return jsonify({'error': 'Seules les contributions complétées peuvent être remboursées'}), 400
+
+    if contribution.transfer_batch_id:
+        return jsonify({'error': 'Contribution incluse dans un lot de transfert : remboursement impossible'}), 409
     
     # Traiter le remboursement via le gateway
     from app.utils.payments import process_refund
