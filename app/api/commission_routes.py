@@ -2,6 +2,7 @@
 Routes pour les commissions plateforme et CEO
 """
 
+from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
@@ -153,7 +154,7 @@ def update_commission_config(config_id):
 def get_earnings():
     """Récupère tous les gains de la plateforme"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 50, type=int)
+    per_page = per_page_arg(50)
     status = request.args.get('status')
     project_id = request.args.get('project_id', type=int)
     
@@ -223,7 +224,7 @@ def get_earnings_summary():
 def get_payouts():
     """Récupère tous les paiements au CEO"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     
     pagination = CEOPayout.query.order_by(CEOPayout.initiated_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False

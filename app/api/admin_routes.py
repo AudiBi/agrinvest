@@ -2,6 +2,7 @@
 Routes d'administration
 """
 
+from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
@@ -31,7 +32,7 @@ def get_stats():
 def list_all_users():
     """Liste tous les utilisateurs avec filtres"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 50, type=int)
+    per_page = per_page_arg(50)
     role = request.args.get('role')
     is_verified = request.args.get('is_verified')
     is_active = request.args.get('is_active')
@@ -126,7 +127,7 @@ def unban_user(user_id):
 def get_pending_projects():
     """Récupère les projets en attente de validation"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     
     projects = Project.query.filter_by(
         status='pending',
