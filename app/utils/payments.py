@@ -59,6 +59,28 @@ def payment_matches(contribution, amount, currency):
     return paid == expected and str(currency or '').upper() == str(contribution.currency).upper()
 
 
+def initiate_payment(contribution):
+    """Démarre le paiement auprès de la passerelle choisie et enregistre son identifiant côté serveur.
+
+    Retourne le dict de la passerelle (avec 'id' et 'approval_url' quand applicable).
+    Lève ValueError (méthode inconnue) ou RuntimeError (passerelle en échec).
+    """
+    from app.extensions import db
+
+    starters = {
+        'stripe': (process_stripe_payment, 'stripe_payment_intent_id', 'id'),
+        'paypal': (process_paypal_payment, 'paypal_order_id', 'id'),
+        'moncash': (process_moncash_payment, 'moncash_payment_id', 'payment_id'),
+    }
+    if contribution.payment_method not in starters:
+        raise ValueError(f'Méthode de paiement non prise en charge : {contribution.payment_method}')
+    start, attribute, key = starters[contribution.payment_method]
+    result = start(contribution)
+    setattr(contribution, attribute, result[key])
+    db.session.commit()
+    return result
+
+
 def _gateway_id(contribution):
     """(méthode, identifiant stocké côté serveur) ; jamais l'identifiant fourni par le client."""
     method = contribution.payment_method

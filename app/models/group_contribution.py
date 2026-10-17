@@ -2,7 +2,7 @@
 Modèles pour les cagnottes de groupe (famille, église, association)
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import secrets
 from sqlalchemy import Index, CheckConstraint
@@ -48,6 +48,7 @@ class GroupContribution(db.Model):
     completed_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
+    project = db.relationship('Project', backref=db.backref('group_contributions', lazy='dynamic'))
     contributions = db.relationship('Contribution', backref='group', lazy='dynamic')
     invites = db.relationship('GroupContributionInvite', backref='group', 
                               lazy='dynamic', cascade='all, delete-orphan')
@@ -71,13 +72,33 @@ class GroupContribution(db.Model):
 
     @property
     def member_count(self):
-        return self.contributions.filter_by(status=ContributionStatus.COMPLETED).distinct('investor_id').count()
+        from app.models.contribution import Contribution
+        return db.session.query(db.func.count(db.func.distinct(Contribution.investor_id))).filter(
+            Contribution.group_id == self.id,
+            Contribution.status == ContributionStatus.COMPLETED
+        ).scalar() or 0
+
+    @property
+    def is_open(self):
+        """Accepte encore des contributions : active et non expirée."""
+        if self.status != 'active':
+            return False
+        return not (self.expires_at and self.expires_at < utc_now().replace(tzinfo=None))
 
     def add_contribution(self, amount):
-        self.current_amount += Decimal(str(amount))
-        if self.current_amount >= self.target_amount:
+        """Crédite la cagnotte (appelé à la confirmation du paiement, jamais avant)."""
+        self.current_amount = (self.current_amount or Decimal('0')) + Decimal(str(amount))
+        if self.current_amount >= self.target_amount and self.status == 'active':
             self.status = 'completed'
             self.completed_at = utc_now()
+        db.session.commit()
+
+    def remove_contribution(self, amount):
+        """Débite la cagnotte (remboursement) ; une cagnotte complétée par erreur redevient active."""
+        self.current_amount = max(Decimal('0'), (self.current_amount or Decimal('0')) - Decimal(str(amount)))
+        if self.status == 'completed' and self.current_amount < self.target_amount:
+            self.status = 'active'
+            self.completed_at = None
         db.session.commit()
 
     def to_dict(self):
@@ -125,7 +146,7 @@ class GroupContributionInvite(db.Model):
         if not self.invite_code:
             self.invite_code = secrets.token_urlsafe(12)
         if not self.expires_at:
-            self.expires_at = utc_now().replace(day=utc_now().day + 7)
+            self.expires_at = utc_now() + timedelta(days=7)
 
     def to_dict(self):
         return {
