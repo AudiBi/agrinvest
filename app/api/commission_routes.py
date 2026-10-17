@@ -12,11 +12,31 @@ from app.models import (
 )
 from app.extensions import db
 from app.utils.decorators import admin_required
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
+import uuid
 
 
 commission_bp = Blueprint('commission', __name__, url_prefix='/commission')
+
+
+def _parse_money(value):
+    """Montant décimal fini et positif ou nul (ValueError sinon)."""
+    try:
+        amount = Decimal(str(value))
+    except InvalidOperation:
+        raise ValueError(f'Montant invalide : {value!r}')
+    if not amount.is_finite() or amount < 0:
+        raise ValueError(f'Montant invalide : {value!r}')
+    return amount
+
+
+def _parse_percentage(value):
+    """Pourcentage entre 0 et 20 (borne imposée par la base de données)."""
+    amount = _parse_money(value)
+    if amount > 20:
+        raise ValueError('Le pourcentage doit être compris entre 0 et 20')
+    return amount
 
 
 @commission_bp.route('/config', methods=['GET'])
@@ -25,12 +45,11 @@ commission_bp = Blueprint('commission', __name__, url_prefix='/commission')
 def get_commission_configs():
     """Récupère toutes les configurations de commission"""
     configs = PlatformCommissionConfig.query.filter_by(is_active=True).all()
-    
+    default = PlatformCommissionConfig.query.filter_by(is_default=True, is_active=True).first()
+
     return jsonify({
         'configs': [c.to_dict() for c in configs],
-        'default_commission': float(PlatformCommissionConfig.query.filter_by(
-            is_default=True, is_active=True
-        ).first().percentage) if PlatformCommissionConfig.query.filter_by(is_default=True).first() else 3.0
+        'default_commission': float(default.percentage) if default else 3.0
     }), 200
 
 
@@ -39,20 +58,31 @@ def get_commission_configs():
 @admin_required
 def create_commission_config():
     """Crée une nouvelle configuration de commission"""
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
+
+    try:
+        if not data.get('commission_type'):
+            raise ValueError('commission_type requis')
+        percentage = _parse_percentage(data.get('percentage'))
+        min_amount = _parse_money(data.get('min_amount', 0))
+        max_amount = _parse_money(data['max_amount']) if data.get('max_amount') else None
+        fixed_fee = _parse_money(data.get('fixed_fee', 0))
+        min_amount_to_apply = _parse_money(data.get('min_amount_to_apply', 0))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
     config = PlatformCommissionConfig(
         commission_type=data['commission_type'],
-        percentage=Decimal(str(data['percentage'])),
+        percentage=percentage,
         project_category=data.get('project_category'),
         applies_on=data.get('applies_on', 'amount_raised'),
-        min_amount=Decimal(str(data.get('min_amount', 0))),
-        max_amount=Decimal(str(data['max_amount'])) if data.get('max_amount') else None,
-        fixed_fee=Decimal(str(data.get('fixed_fee', 0))),
-        min_amount_to_apply=Decimal(str(data.get('min_amount_to_apply', 0))),
+        min_amount=min_amount,
+        max_amount=max_amount,
+        fixed_fee=fixed_fee,
+        min_amount_to_apply=min_amount_to_apply,
         description_fr=data.get('description_fr'),
         description_ht=data.get('description_ht'),
-        is_default=data.get('is_default', False),
+        is_default=bool(data.get('is_default', False)),
         created_by_id=current_user.id
     )
     
@@ -61,17 +91,15 @@ def create_commission_config():
         PlatformCommissionConfig.query.update({PlatformCommissionConfig.is_default: False})
     
     db.session.add(config)
-    db.session.commit()
-    
-    # Journaliser l'action
-    log = CommissionAuditLog(
+    db.session.flush()  # id de la config, sans valider : configuration et journal dans la même transaction
+
+    db.session.add(CommissionAuditLog(
         action='create',
         config_id=config.id,
         new_percentage=config.percentage,
         changed_by_id=current_user.id,
         reason=data.get('reason')
-    )
-    db.session.add(log)
+    ))
     db.session.commit()
     
     return jsonify({
@@ -87,32 +115,31 @@ def update_commission_config(config_id):
     """Met à jour une configuration de commission"""
     config = PlatformCommissionConfig.query.get_or_404(config_id)
     
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     old_percentage = config.percentage
-    
+
     if 'percentage' in data:
-        config.percentage = Decimal(str(data['percentage']))
+        try:
+            config.percentage = _parse_percentage(data['percentage'])
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
     if 'is_active' in data:
-        config.is_active = data['is_active']
+        config.is_active = bool(data['is_active'])
     if 'is_default' in data and data['is_default']:
         PlatformCommissionConfig.query.update({PlatformCommissionConfig.is_default: False})
         config.is_default = True
     if 'description_fr' in data:
         config.description_fr = data['description_fr']
-    
-    db.session.commit()
-    
-    # Journaliser l'action
-    log = CommissionAuditLog(
+
+    db.session.add(CommissionAuditLog(
         action='update',
         config_id=config.id,
         old_percentage=old_percentage,
         new_percentage=config.percentage,
         changed_by_id=current_user.id,
         reason=data.get('reason')
-    )
-    db.session.add(log)
-    db.session.commit()
+    ))
+    db.session.commit()  # configuration et journal validés ensemble
     
     return jsonify({
         'message': 'Configuration mise à jour',
@@ -131,7 +158,7 @@ def get_earnings():
     project_id = request.args.get('project_id', type=int)
     
     query = PlatformEarning.query
-    
+
     if status:
         query = query.filter_by(status=status)
     if project_id:
@@ -144,7 +171,8 @@ def get_earnings():
     return jsonify({
         'earnings': [e.to_dict() for e in pagination.items],
         'total': pagination.total,
-        'total_amount': float(db.session.query(db.func.sum(PlatformEarning.commission_amount_htg)).scalar() or 0),
+        'total_amount': float(db.session.query(db.func.sum(PlatformEarning.commission_amount_htg)).filter(
+            PlatformEarning.status != 'cancelled').scalar() or 0),
         'page': page,
         'per_page': per_page,
         'pages': pagination.pages
@@ -162,20 +190,16 @@ def get_earnings_summary():
     
     start_date, end_date = get_date_range(period)
     
-    earnings = PlatformEarning.query.filter(
-        PlatformEarning.created_at.between(start_date, end_date),
-        PlatformEarning.status == 'paid'
-    ).all()
-    
-    total = sum(e.commission_amount_htg for e in earnings)
-    
-    # Par projet
+    # Même périmètre pour le total et le détail : commissions générées, hors annulées (remboursements)
     by_project = db.session.query(
         PlatformEarning.project_id,
         db.func.sum(PlatformEarning.commission_amount_htg).label('total')
     ).filter(
-        PlatformEarning.created_at.between(start_date, end_date)
+        PlatformEarning.created_at.between(start_date, end_date),
+        PlatformEarning.status != 'cancelled'
     ).group_by(PlatformEarning.project_id).all()
+
+    total = sum(p[1] for p in by_project)
     
     return jsonify({
         'period': period,
@@ -222,21 +246,28 @@ def get_payouts():
 @admin_required
 def create_payout():
     """Crée un paiement pour le CEO"""
-    data = request.get_json()
-    
-    # Récupérer les earnings non payés
+    data = request.get_json(silent=True) or {}
+
+    try:
+        transfer_fee = _parse_money(data.get('transfer_fee', 0))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
+    # Verrou des lignes (PostgreSQL) : deux demandes simultanées ne peuvent pas verser deux fois
     unpaid_earnings = PlatformEarning.query.filter_by(
         paid_to_ceo=False,
         status='pending'
-    ).all()
-    
+    ).with_for_update().all()
+
     if not unpaid_earnings:
         return jsonify({'error': 'Aucune commission à payer'}), 400
-    
+
     total_amount = sum(e.commission_amount_htg for e in unpaid_earnings)
-    
+    if transfer_fee > total_amount:
+        return jsonify({'error': 'Les frais de transfert dépassent le montant à verser'}), 400
+
     payout = CEOPayout(
-        payout_reference=f'CEO-{utc_now().strftime("%Y%m%d-%H%M%S")}',
+        payout_reference=f'CEO-{utc_now().strftime("%Y%m%d-%H%M%S")}-{uuid.uuid4().hex[:6]}',
         period_start=unpaid_earnings[0].created_at,
         period_end=utc_now(),
         total_earnings=total_amount,
@@ -247,7 +278,7 @@ def create_payout():
         payout_account=data.get('payout_account'),
         payout_amount=total_amount,
         payout_currency='HTG',
-        net_received=total_amount - Decimal(str(data.get('transfer_fee', 0))),
+        net_received=total_amount - transfer_fee,
         created_by_id=current_user.id
     )
     
@@ -272,7 +303,12 @@ def create_payout():
 def complete_payout(payout_id):
     """Marque un paiement comme complété"""
     payout = CEOPayout.query.get_or_404(payout_id)
-    
+
+    if payout.status == 'completed':
+        return jsonify({'message': 'Paiement déjà complété', 'payout': payout.to_dict()}), 200
+    if payout.status not in ('pending', 'processing'):
+        return jsonify({'error': f'Un paiement « {payout.status} » ne peut pas être complété'}), 409
+
     payout.status = 'completed'
     payout.completed_at = utc_now()
     
@@ -298,10 +334,12 @@ def complete_payout(payout_id):
 def get_commission_dashboard():
     """Tableau de bord des commissions pour le CEO"""
     
+    default = PlatformCommissionConfig.query.filter_by(is_default=True, is_active=True).first()
+
     # Total des commissions générées
     total_commissions = db.session.query(
         db.func.sum(PlatformEarning.commission_amount_htg)
-    ).scalar() or 0
+    ).filter(PlatformEarning.status != 'cancelled').scalar() or 0
     
     # Commissions payées au CEO
     paid_to_ceo = db.session.query(
@@ -333,7 +371,5 @@ def get_commission_dashboard():
         'paid_to_ceo_htg': float(paid_to_ceo),
         'pending_commissions_htg': float(pending_commissions),
         'monthly_breakdown': monthly,
-        'current_commission_rate': float(
-            PlatformCommissionConfig.query.filter_by(is_default=True).first().percentage
-        ) if PlatformCommissionConfig.query.filter_by(is_default=True).first() else 3.0
+        'current_commission_rate': float(default.percentage) if default else 3.0
     }), 200

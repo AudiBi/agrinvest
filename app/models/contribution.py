@@ -194,6 +194,32 @@ class Contribution(db.Model):
         self.project.add_contribution(self.amount_htg)
         db.session.commit()
 
+    def _cancel_platform_earnings(self):
+        """Annule la commission d'une contribution remboursée (si elle n'est pas déjà versée)."""
+        from app.models.platform_commission import PlatformEarning
+        from flask import current_app
+
+        for earning in PlatformEarning.query.filter_by(contribution_id=self.id).all():
+            if earning.status == 'pending':
+                earning.status = 'cancelled'
+            elif earning.status != 'cancelled':
+                current_app.logger.warning(
+                    f"Contribution {self.id} remboursée mais la commission {earning.id} est déjà "
+                    f"« {earning.status} » : régularisation manuelle nécessaire")
+
+    def _cancel_platform_earnings(self):
+        """Annule la commission d'une contribution remboursée (si elle n'est pas déjà versée)."""
+        from app.models.platform_commission import PlatformEarning
+        from flask import current_app
+
+        for earning in PlatformEarning.query.filter_by(contribution_id=self.id).all():
+            if earning.status == 'pending':
+                earning.status = 'cancelled'
+            elif earning.status != 'cancelled':
+                current_app.logger.warning(
+                    f"Contribution {self.id} remboursée mais la commission {earning.id} est déjà "
+                    f"« {earning.status} » : régularisation manuelle nécessaire")
+
     def mark_failed(self):
         self.status = ContributionStatus.FAILED
         db.session.commit()
@@ -204,6 +230,8 @@ class Contribution(db.Model):
             return
         self.status = ContributionStatus.REFUNDED
         self.refunded_at = utc_now()
+        self._cancel_platform_earnings()
+        self._cancel_platform_earnings()
         if self.project and self.amount_htg:
             self.project.amount_raised -= self.amount_htg
         db.session.commit()
