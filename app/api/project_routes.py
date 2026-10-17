@@ -2,6 +2,8 @@
 Routes pour les projets
 """
 
+from datetime import datetime
+from app.models.user import utc_now
 from flask import request, jsonify, current_app, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp

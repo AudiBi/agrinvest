@@ -272,10 +272,15 @@ def get_payment_methods():
 @contribution_bp.route('/estimate-fees', methods=['POST'])
 def estimate_fees():
     """Estime les frais pour une contribution"""
-    data = request.get_json()
-    amount = Decimal(str(data['amount']))
-    currency = data['currency']
-    payment_method = data['payment_method']
+    data = request.get_json(silent=True) or {}
+    try:
+        amount = Decimal(str(data['amount']))
+        if not amount.is_finite() or amount <= 0:
+            raise InvalidOperation
+        currency = data['currency']
+        payment_method = data['payment_method']
+    except (KeyError, InvalidOperation):
+        return jsonify({'error': 'amount (> 0), currency et payment_method requis'}), 400
     country = data.get('country', 'HT')
     
     from app.utils.exchange_rates import get_exchange_rate

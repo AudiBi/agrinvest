@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes cagnottes - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Mes cagnottes</h1>
+        <a href="{{ url_for('main.create_group') }}" class="btn btn-success">Créer une cagnotte</a>
+    </div>
+
+    <h2 class="h4">Cagnottes que j'ai créées</h2>
+    {% for group in created_groups %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="h5">{{ group.group_name }}</h3>
+            <p class="mb-1">{{ group.current_amount or 0 }} / {{ group.target_amount }} {{ group.currency }}
+               <span class="badge bg-secondary ms-2">{{ group.status }}</span></p>
+            {% if group.expires_at %}<small class="text-muted">Expire le {{ group.expires_at|format_date }}</small>{% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Vous n'avez créé aucune cagnotte.</p>
+    {% endfor %}
+
+    <h2 class="h4 mt-4">Cagnottes auxquelles j'ai contribué</h2>
+    {% for group in contributed_groups %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="h5">{{ group.group_name }}</h3>
+            <p class="mb-0">{{ group.current_amount or 0 }} / {{ group.target_amount }} {{ group.currency }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Vous n'avez contribué à aucune cagnotte.</p>
+    {% endfor %}
+</div>
+{% endblock %}

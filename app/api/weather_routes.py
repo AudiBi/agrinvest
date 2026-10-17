@@ -2,6 +2,10 @@
 Routes pour la météo et les alertes
 """
 
+from datetime import datetime
+from app.utils.weather import generate_agricultural_advice
+from app.utils.notifications import send_weather_alert_notifications
+from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp

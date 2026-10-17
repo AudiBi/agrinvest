@@ -2,6 +2,7 @@
 Routes pour les points de collecte (cash en Haïti)
 """
 
+from decimal import Decimal
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp
