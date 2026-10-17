@@ -2,6 +2,8 @@
 Routes pour les mises à jour de récolte
 """
 
+from app.utils.validators import validate_url
+from app.utils.pagination import per_page_arg
 from flask import request, jsonify, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp
@@ -12,13 +14,20 @@ from app.extensions import db
 harvest_bp = Blueprint('harvest', __name__, url_prefix='/harvest-updates')
 
 
+def _project_visible(project):
+    return project.is_published or (
+        current_user.is_authenticated and (current_user.id == project.farmer_id or current_user.is_admin))
+
+
 @harvest_bp.route('/projects/<int:project_id>', methods=['GET'])
 def get_project_updates(project_id):
     """Récupère toutes les mises à jour d'un projet"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    
+    per_page = per_page_arg(10)
+
     project = Project.query.get_or_404(project_id)
+    if not _project_visible(project):
+        return jsonify({'error': 'Projet non disponible'}), 404
     
     query = project.updates.filter_by(is_published=True)
     
@@ -42,14 +51,20 @@ def get_project_updates(project_id):
 @login_required
 def create_update():
     """Crée une mise à jour"""
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
+
+    if not isinstance(data.get('project_id'), int) or not data.get('title') or not data.get('content'):
+        return jsonify({'error': 'project_id, title et content requis'}), 400
     project = Project.query.get_or_404(data['project_id'])
-    
+
     # Vérifier les droits
     if project.farmer_id != current_user.id and not current_user.is_admin:
         return jsonify({'error': 'Non autorisé'}), 403
-    
+
+    for url_field in ('image_url', 'video_url'):
+        if data.get(url_field) and not validate_url(data[url_field]):
+            return jsonify({'error': f'{url_field} doit être une URL http(s) valide'}), 400
+
     update = HarvestUpdate(
         project_id=project.id,
         title=data['title'],
@@ -83,13 +98,10 @@ def get_update(update_id):
     """Récupère une mise à jour spécifique"""
     update = HarvestUpdate.query.get_or_404(update_id)
     
-    # Vérifier si le projet est publié ou si l'utilisateur a le droit
-    if not update.is_published and not current_user.is_authenticated:
-        return jsonify({'error': 'Non disponible'}), 404
-    
-    if not update.is_published and \
-       update.project.farmer_id != current_user.id and \
-       not current_user.is_admin:
+    # Visible seulement si la mise à jour ET le projet sont publiés (ou pour le propriétaire / un admin)
+    privileged = current_user.is_authenticated and (
+        update.project.farmer_id == current_user.id or current_user.is_admin)
+    if not privileged and not (update.is_published and update.project.is_published):
         return jsonify({'error': 'Non disponible'}), 404
     
     return jsonify(update.to_dict()), 200
@@ -104,11 +116,16 @@ def update_update(update_id):
     if update.project.farmer_id != current_user.id and not current_user.is_admin:
         return jsonify({'error': 'Non autorisé'}), 403
     
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
+
     allowed_fields = ['title', 'title_ht', 'content', 'content_ht', 'update_type',
                       'image_url', 'video_url', 'is_important', 'is_published']
-    
+    for url_field in ('image_url', 'video_url'):
+        if data.get(url_field) and not validate_url(data[url_field]):
+            return jsonify({'error': f'{url_field} doit être une URL http(s) valide'}), 400
+    if any(f in data and not data[f] for f in ('title', 'content')):
+        return jsonify({'error': 'title et content ne peuvent pas être vides'}), 400
+
     for field in allowed_fields:
         if field in data:
             setattr(update, field, data[field])

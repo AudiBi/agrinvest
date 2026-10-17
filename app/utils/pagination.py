@@ -99,3 +99,8 @@ def generate_pagination_links(pagination, endpoint, **kwargs):
         })
     
     return links
+
+
+def per_page_arg(default=20, maximum=100):
+    """Lit ?per_page= en le bornant à [1, maximum] (évite les requêtes qui chargent toute une table)."""
+    return max(1, min(request.args.get('per_page', default, type=int), maximum))

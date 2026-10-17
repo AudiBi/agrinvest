@@ -2,8 +2,10 @@
 Routes pour les utilisateurs
 """
 
+from app.utils.validators import validate_url
+from app.utils.pagination import per_page_arg
 from app.models.contribution import Contribution
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, current_app, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp
 from app.models import Project, User
@@ -12,6 +14,138 @@ from app.utils.decorators import admin_required, farmer_required
 
 
 user_bp = Blueprint('users', __name__, url_prefix='/users')
+
+ASSIGNABLE_ROLES = ('investor', 'farmer', 'agent', 'ambassador', 'admin')
+LANGUAGES = ('fr', 'ht', 'en')
+BOOLEAN_FIELDS = ('diaspora_newsletter', 'sms_alerts_enabled', 'whatsapp_alerts_enabled')
+MAX_LENGTHS = {'name': 100, 'phone': 20, 'location': 100, 'city': 100, 'avatar_url': 200, 'bio': 2000}
+
+
+def _clean_profile(values):
+    """Valide un profil (longueurs de colonnes, devise, langue, pays, booléens). Lève ValueError."""
+    for field, limit in MAX_LENGTHS.items():
+        if field in values and values[field] is not None:
+            if not isinstance(values[field], str) or len(values[field]) > limit:
+                raise ValueError(f'{field} doit être un texte de {limit} caractères maximum')
+    if 'name' in values and not (values['name'] or '').strip():
+        raise ValueError('name ne peut pas être vide')
+    if values.get('avatar_url') and not validate_url(values['avatar_url']):
+        raise ValueError('avatar_url doit être une URL http(s) valide')
+    if 'country' in values and values['country'] is not None:
+        country = values['country']
+        if not (isinstance(country, str) and len(country) == 2 and country.isalpha()):
+            raise ValueError('country doit être un code pays à 2 lettres')
+        values['country'] = country.upper()
+    if 'preferred_currency' in values:
+        currency = str(values['preferred_currency']).upper()
+        if currency not in current_app.config['SUPPORTED_CURRENCIES']:
+            raise ValueError(f'preferred_currency non supportée : {currency}')
+        values['preferred_currency'] = currency
+    if 'preferred_language' in values and values['preferred_language'] not in LANGUAGES:
+        raise ValueError(f"preferred_language doit être parmi : {', '.join(LANGUAGES)}")
+    for field in BOOLEAN_FIELDS:
+        if field in values and not isinstance(values[field], bool):
+            raise ValueError(f'{field} doit être un booléen')
+    return values
+
+ASSIGNABLE_ROLES = ('investor', 'farmer', 'agent', 'ambassador', 'admin')
+LANGUAGES = ('fr', 'ht', 'en')
+BOOLEAN_FIELDS = ('diaspora_newsletter', 'sms_alerts_enabled', 'whatsapp_alerts_enabled')
+MAX_LENGTHS = {'name': 100, 'phone': 20, 'location': 100, 'city': 100, 'avatar_url': 200, 'bio': 2000}
+
+
+def _clean_profile(values):
+    """Valide un profil (longueurs de colonnes, devise, langue, pays, booléens). Lève ValueError."""
+    for field, limit in MAX_LENGTHS.items():
+        if field in values and values[field] is not None:
+            if not isinstance(values[field], str) or len(values[field]) > limit:
+                raise ValueError(f'{field} doit être un texte de {limit} caractères maximum')
+    if 'name' in values and not (values['name'] or '').strip():
+        raise ValueError('name ne peut pas être vide')
+    if values.get('avatar_url') and not validate_url(values['avatar_url']):
+        raise ValueError('avatar_url doit être une URL http(s) valide')
+    if 'country' in values and values['country'] is not None:
+        country = values['country']
+        if not (isinstance(country, str) and len(country) == 2 and country.isalpha()):
+            raise ValueError('country doit être un code pays à 2 lettres')
+        values['country'] = country.upper()
+    if 'preferred_currency' in values:
+        currency = str(values['preferred_currency']).upper()
+        if currency not in current_app.config['SUPPORTED_CURRENCIES']:
+            raise ValueError(f'preferred_currency non supportée : {currency}')
+        values['preferred_currency'] = currency
+    if 'preferred_language' in values and values['preferred_language'] not in LANGUAGES:
+        raise ValueError(f"preferred_language doit être parmi : {', '.join(LANGUAGES)}")
+    for field in BOOLEAN_FIELDS:
+        if field in values and not isinstance(values[field], bool):
+            raise ValueError(f'{field} doit être un booléen')
+    return values
+
+ASSIGNABLE_ROLES = ('investor', 'farmer', 'agent', 'ambassador', 'admin')
+LANGUAGES = ('fr', 'ht', 'en')
+BOOLEAN_FIELDS = ('diaspora_newsletter', 'sms_alerts_enabled', 'whatsapp_alerts_enabled')
+MAX_LENGTHS = {'name': 100, 'phone': 20, 'location': 100, 'city': 100, 'avatar_url': 200, 'bio': 2000}
+
+
+def _clean_profile(values):
+    """Valide un profil (longueurs de colonnes, devise, langue, pays, booléens). Lève ValueError."""
+    for field, limit in MAX_LENGTHS.items():
+        if field in values and values[field] is not None:
+            if not isinstance(values[field], str) or len(values[field]) > limit:
+                raise ValueError(f'{field} doit être un texte de {limit} caractères maximum')
+    if 'name' in values and not (values['name'] or '').strip():
+        raise ValueError('name ne peut pas être vide')
+    if values.get('avatar_url') and not validate_url(values['avatar_url']):
+        raise ValueError('avatar_url doit être une URL http(s) valide')
+    if 'country' in values and values['country'] is not None:
+        country = values['country']
+        if not (isinstance(country, str) and len(country) == 2 and country.isalpha()):
+            raise ValueError('country doit être un code pays à 2 lettres')
+        values['country'] = country.upper()
+    if 'preferred_currency' in values:
+        currency = str(values['preferred_currency']).upper()
+        if currency not in current_app.config['SUPPORTED_CURRENCIES']:
+            raise ValueError(f'preferred_currency non supportée : {currency}')
+        values['preferred_currency'] = currency
+    if 'preferred_language' in values and values['preferred_language'] not in LANGUAGES:
+        raise ValueError(f"preferred_language doit être parmi : {', '.join(LANGUAGES)}")
+    for field in BOOLEAN_FIELDS:
+        if field in values and not isinstance(values[field], bool):
+            raise ValueError(f'{field} doit être un booléen')
+    return values
+
+ASSIGNABLE_ROLES = ('investor', 'farmer', 'agent', 'ambassador', 'admin')
+LANGUAGES = ('fr', 'ht', 'en')
+BOOLEAN_FIELDS = ('diaspora_newsletter', 'sms_alerts_enabled', 'whatsapp_alerts_enabled')
+MAX_LENGTHS = {'name': 100, 'phone': 20, 'location': 100, 'city': 100, 'avatar_url': 200, 'bio': 2000}
+
+
+def _clean_profile(values):
+    """Valide un profil (longueurs de colonnes, devise, langue, pays, booléens). Lève ValueError."""
+    for field, limit in MAX_LENGTHS.items():
+        if field in values and values[field] is not None:
+            if not isinstance(values[field], str) or len(values[field]) > limit:
+                raise ValueError(f'{field} doit être un texte de {limit} caractères maximum')
+    if 'name' in values and not (values['name'] or '').strip():
+        raise ValueError('name ne peut pas être vide')
+    if values.get('avatar_url') and not validate_url(values['avatar_url']):
+        raise ValueError('avatar_url doit être une URL http(s) valide')
+    if 'country' in values and values['country'] is not None:
+        country = values['country']
+        if not (isinstance(country, str) and len(country) == 2 and country.isalpha()):
+            raise ValueError('country doit être un code pays à 2 lettres')
+        values['country'] = country.upper()
+    if 'preferred_currency' in values:
+        currency = str(values['preferred_currency']).upper()
+        if currency not in current_app.config['SUPPORTED_CURRENCIES']:
+            raise ValueError(f'preferred_currency non supportée : {currency}')
+        values['preferred_currency'] = currency
+    if 'preferred_language' in values and values['preferred_language'] not in LANGUAGES:
+        raise ValueError(f"preferred_language doit être parmi : {', '.join(LANGUAGES)}")
+    for field in BOOLEAN_FIELDS:
+        if field in values and not isinstance(values[field], bool):
+            raise ValueError(f'{field} doit être un booléen')
+    return values
 
 
 @user_bp.route('', methods=['GET'])
@@ -39,7 +173,7 @@ def list_users():
         type: string
     """
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     role = request.args.get('role')
     country = request.args.get('country')
     search = request.args.get('search')
@@ -86,19 +220,24 @@ def update_user(user_id):
         return jsonify({'error': 'Accès non autorisé'}), 403
     
     user = User.query.get_or_404(user_id)
-    data = request.get_json()
-    
-    allowed_fields = ['name', 'phone', 'location', 'bio', 'avatar_url', 
+    data = request.get_json(silent=True) or {}
+
+    allowed_fields = ['name', 'phone', 'location', 'bio', 'avatar_url',
                       'country', 'city', 'preferred_currency', 'preferred_language',
                       'diaspora_newsletter', 'sms_alerts_enabled', 'whatsapp_alerts_enabled']
-    
-    for field in allowed_fields:
-        if field in data:
-            setattr(user, field, data[field])
-    
-    if current_user.is_admin and 'role' in data:
-        user.role = data['role']
-    
+
+    try:
+        values = _clean_profile({k: data[k] for k in allowed_fields if k in data})
+        if current_user.is_admin and 'role' in data:
+            if data['role'] not in ASSIGNABLE_ROLES:
+                raise ValueError(f"role doit être parmi : {', '.join(ASSIGNABLE_ROLES)}")
+            values['role'] = data['role']
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
+    for field, value in values.items():
+        setattr(user, field, value)
+
     db.session.commit()
     
     return jsonify({
@@ -132,8 +271,8 @@ def get_user_contributions(user_id):
         return jsonify({'error': 'Accès non autorisé'}), 403
     
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
+    per_page = per_page_arg(20)
+
     user = User.query.get_or_404(user_id)
     pagination = user.contributions.filter_by(
         status='completed'
@@ -159,10 +298,10 @@ def get_user_projects(user_id):
         return jsonify({'error': 'Accès non autorisé'}), 403
     
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
+    per_page = per_page_arg(20)
+
     user = User.query.get_or_404(user_id)
-    
+
     if not user.is_farmer and not current_user.is_admin:
         return jsonify({'error': 'Cet utilisateur n\'est pas un agriculteur'}), 400
     
@@ -223,14 +362,16 @@ def get_dashboard():
             'recent_projects': [p.to_dict() for p in projects[:5]],
             'recent_contributions': [c.to_dict() for c in 
                 Contribution.query.join(Project)
-                .filter(Project.farmer_id == current_user.id)
+                .filter(Project.farmer_id == current_user.id,
+                        Contribution.status == 'completed')
                 .order_by(Contribution.created_at.desc())
                 .limit(10).all()]
         }
     
     else:
         # Dashboard investisseur
-        contributions = current_user.contributions.filter_by(status='completed').all()
+        contributions = current_user.contributions.filter_by(status='completed').order_by(
+            Contribution.created_at.desc()).all()
         total_invested = sum(c.amount_htg for c in contributions)
         
         dashboard = {
