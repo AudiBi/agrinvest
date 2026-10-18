@@ -77,6 +77,8 @@ def create_app(config_name=None):
     config_class.validate()  # SECRET_KEY / DATABASE_URL obligatoires
     app.config.from_object(config_class)
     
+    _init_sentry(app)
+    
     # Les colonnes DateTime sont naïves et écrites en UTC : sous PostgreSQL, une session dans un autre
     # fuseau décalerait les valeurs reçues avec un fuseau (utc_now()) par rapport aux comparaisons naïves.
     if str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('postgres'):
@@ -140,6 +142,25 @@ def create_app(config_name=None):
 # ============================================================================
 # FONCTIONS INTERNES
 # ============================================================================
+
+def _init_sentry(app):
+    """Active le suivi d'erreurs Sentry si SENTRY_DSN est défini (bibliothèque facultative)."""
+    dsn = app.config.get('SENTRY_DSN')
+    if not dsn or app.testing:
+        return
+    try:
+        import sentry_sdk
+    except ImportError:
+        app.logger.warning("SENTRY_DSN est défini mais sentry-sdk n'est pas installé : "
+                           "pip install 'sentry-sdk[flask]'")
+        return
+    sentry_sdk.init(
+        dsn=dsn,
+        environment=app.config.get('SENTRY_ENVIRONMENT'),
+        traces_sample_rate=app.config.get('SENTRY_TRACES_SAMPLE_RATE', 0.1),
+        send_default_pii=False,  # ni adresses IP ni en-têtes d'identification
+    )
+
 
 def _create_directories(app):
     """Crée tous les dossiers nécessaires à l'application"""
@@ -474,14 +495,53 @@ def _setup_logging(app):
 
 def _register_cli_commands(app):
     """Enregistre les commandes CLI personnalisées"""
-    
+    import click
+
     @app.cli.command('init-db')
     def init_db_command():
-        """Initialise la base de données"""
+        """Crée les tables sur une base SQLite de développement (en production : flask db upgrade)"""
         import click
-        click.echo("📦 Initialisation de la base de données...")
+        # create_all() contourne les migrations : sur PostgreSQL, la table alembic_version manquerait
+        # et toutes les migrations futures échoueraient.
+        if not str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('sqlite'):
+            raise click.ClickException(
+                "Cette commande ne crée pas le schéma d'une base PostgreSQL. Utilisez : flask db upgrade")
+        click.echo("📦 Initialisation de la base de données de développement...")
         db.create_all()
         click.echo("✅ Base de données initialisée")
+
+    @app.cli.command('create-admin')
+    @click.option('--email', prompt=True, help="Adresse email de l'administrateur")
+    @click.option('--name', prompt=True, default='Administrateur', show_default=True)
+    def create_admin_command(email, name):
+        """Crée un compte administrateur (mot de passe saisi sans écho, jamais affiché ni journalisé)"""
+        from app.models import User
+        from app.models.enums import UserRole
+        from app.utils.audit import record_audit
+        from app.utils.validators import validate_email, validate_password
+
+        email = email.strip().lower()
+        if not validate_email(email):
+            raise click.ClickException('Adresse email invalide')
+        if User.query.filter_by(email=email).first():
+            raise click.ClickException('Un compte existe déjà avec cette adresse')
+
+        # Mode non interactif (déploiement automatisé) : variable d'environnement, sinon saisie masquée
+        password = os.environ.get('AGRINVEST_ADMIN_PASSWORD') or click.prompt(
+            'Mot de passe', hide_input=True, confirmation_prompt=True)
+        if not validate_password(password):
+            raise click.ClickException(
+                'Mot de passe trop faible : 8 caractères minimum avec une majuscule, une minuscule et un chiffre')
+
+        from datetime import datetime, timezone
+        admin = User(name=name.strip() or 'Administrateur', email=email, role=UserRole.ADMIN, is_admin=True,
+                     is_verified=True, is_active=True, email_verified_at=datetime.now(timezone.utc))
+        admin.set_password(password)
+        db.session.add(admin)
+        db.session.flush()
+        record_audit('user.admin_created', admin, via='cli')
+        db.session.commit()
+        click.echo(f'✅ Administrateur créé : {email}')
     
     @app.cli.command('reconcile-payments')
     def reconcile_payments_command():
