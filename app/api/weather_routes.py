@@ -2,6 +2,7 @@
 Routes pour la météo et les alertes
 """
 
+from app.utils.audit import record_audit
 from datetime import datetime, timezone
 import re
 from app.utils.weather import generate_agricultural_advice
@@ -272,8 +273,10 @@ def create_alert():
     )
     
     db.session.add(alert)
+    db.session.flush()
+    record_audit('weather.alert.create', alert, zone=alert.zone, severity=alert.severity)
     db.session.commit()
-    
+
     # Envoyer des notifications aux abonnés
     send_weather_alert_notifications(alert)
     

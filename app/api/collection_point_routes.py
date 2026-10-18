@@ -2,6 +2,7 @@
 Routes pour les points de collecte (cash en Haïti)
 """
 
+from app.utils.audit import record_audit
 from decimal import Decimal, InvalidOperation
 from flask import request, jsonify, Blueprint, current_app
 from flask_login import login_required, current_user
@@ -87,6 +88,8 @@ def receive_cash(point_id):
     contribution.collection_point_id = point.id
     contribution.cash_receipt_number = receipt
     contribution.gateway_fee = (amount * (point.fee_percentage or 0) / 100).quantize(Decimal('0.01'))
+    record_audit('cash.receive', contribution, point_id=point.id, receipt=receipt, amount_htg=amount,
+                 fee=contribution.gateway_fee)
     contribution.mark_completed()
 
     current_app.logger.info(
@@ -160,7 +163,7 @@ def create_collection_point():
 
     db.session.add(point)
     db.session.flush()
-
+    record_audit('collection_point.create', point, fee_percentage=fee)
     # Lier aux projets si spécifiés (point et liens validés ensemble)
     for project_id in project_ids:
         db.session.add(ProjectCollectionPoint(project_id=project_id, collection_point_id=point.id))
@@ -191,10 +194,13 @@ def update_collection_point(point_id):
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
 
+    changes = {f: [str(getattr(point, f)), str(data[f])] for f in allowed_fields
+               if f in data and str(getattr(point, f)) != str(data[f])}
+    if changes:
+        record_audit('collection_point.update', point, changes=changes)
     for field in allowed_fields:
         if field in data:
             setattr(point, field, data[field])
-    
     db.session.commit()
     
     return jsonify({

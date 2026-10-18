@@ -2,6 +2,7 @@
 Routes pour les contributions (investissements)
 """
 
+from app.utils.audit import record_audit
 from app.utils.pagination import per_page_arg
 from decimal import Decimal, InvalidOperation
 
@@ -199,6 +200,8 @@ def refund_contribution(contribution_id):
         refund_result = process_refund(contribution)
         
         if refund_result:
+            record_audit('contribution.refund', contribution, amount_htg=contribution.amount_htg,
+                         payment_method=contribution.payment_method)
             contribution.mark_refunded()
             return jsonify({'message': 'Contribution remboursée avec succès'}), 200
         else:

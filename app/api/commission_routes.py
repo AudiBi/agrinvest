@@ -2,6 +2,7 @@
 Routes pour les commissions plateforme et CEO
 """
 
+from app.utils.audit import record_audit
 from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
@@ -284,7 +285,11 @@ def create_payout():
     )
     
     db.session.add(payout)
-    
+    # Jamais le numéro de compte dans l'audit : référence, montant, méthode et nombre de lignes suffisent
+    record_audit('payout.create', target_type='ceo_payout', reference=payout.payout_reference,
+                 amount_htg=total_amount, transfer_fee=transfer_fee, method=payout.payout_method,
+                 earnings_count=len(unpaid_earnings))
+
     # Marquer les earnings comme en attente de paiement
     for earning in unpaid_earnings:
         earning.status = 'pending_payout'
@@ -312,7 +317,7 @@ def complete_payout(payout_id):
 
     payout.status = 'completed'
     payout.completed_at = utc_now()
-    
+    record_audit('payout.complete', payout, reference=payout.payout_reference, amount_htg=payout.payout_amount)
     # Marquer les earnings comme payés
     earnings_ids = json.loads(payout.earnings_ids) if payout.earnings_ids else []
     PlatformEarning.query.filter(PlatformEarning.id.in_(earnings_ids)).update({
