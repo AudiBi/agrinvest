@@ -4,6 +4,8 @@ Routes d'administration pour AgriInvest Haïti
 Gère le panel administrateur, la modération et les statistiques
 """
 
+from app.utils.audit import record_audit
+from datetime import timezone
 from app.models.training import TrainingProgress
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
 from flask_login import login_required, current_user
@@ -224,6 +226,7 @@ def toggle_user_active(user_id):
         return redirect(url_for('admin.user_detail', user_id=user_id))
     
     user.is_active = not user.is_active
+    record_audit('user.activate' if user.is_active else 'user.deactivate', user)
     db.session.commit()
     
     status = "activé" if user.is_active else "désactivé"
@@ -242,7 +245,8 @@ def toggle_user_verified(user_id):
     if user.is_verified and not user.email_verified_at:
         from app.utils.timezone import utc_now
         user.email_verified_at = utc_now()
-    
+
+    record_audit('user.verify' if user.is_verified else 'user.unverify', user)
     db.session.commit()
     
     status = "vérifié" if user.is_verified else "non vérifié"
@@ -262,6 +266,7 @@ def make_admin(user_id):
         return redirect(url_for('admin.user_detail', user_id=user_id))
     
     user.is_admin = not user.is_admin
+    record_audit('user.admin_granted' if user.is_admin else 'user.admin_revoked', user)
     db.session.commit()
     
     status = "administrateur" if user.is_admin else "utilisateur standard"
@@ -281,6 +286,7 @@ def delete_user(user_id):
         return redirect(url_for('admin.user_detail', user_id=user_id))
     
     # Soft delete - désactiver seulement
+    record_audit('user.delete', user, previous_email=user.email)
     user.is_active = False
     user.email = f"deleted_{user.id}@{user.email.split('@')[-1]}"
     db.session.commit()
@@ -366,9 +372,9 @@ def approve_project(project_id):
     
     project.status = ProjectStatus.PUBLISHED
     project.is_published = True
-    project.published_at = datetime.now()
+    project.published_at = datetime.now(timezone.utc).replace(tzinfo=None)  # UTC, comme le reste du modèle
     project.is_verified = True
-    
+    record_audit('project.approve', project)
     db.session.commit()
     
     # Notifier l'agriculteur
@@ -393,9 +399,9 @@ def reject_project(project_id):
     
     project.status = ProjectStatus.DRAFT
     project.is_published = False
-    
+    record_audit('project.reject', project, reason=reason)
     db.session.commit()
-    
+
     # Notifier l'agriculteur avec la raison
     # send_project_rejected_notification(project, reason)
     
@@ -411,6 +417,7 @@ def feature_project(project_id):
     project = Project.query.get_or_404(project_id)
     
     project.is_featured = not project.is_featured
+    record_audit('project.feature' if project.is_featured else 'project.unfeature', project)
     db.session.commit()
     
     status = "à la une" if project.is_featured else "retiré de la une"
@@ -425,10 +432,15 @@ def delete_project(project_id):
     """Supprimer un projet"""
     project = Project.query.get_or_404(project_id)
     
+    # Des investisseurs ont déjà payé : annuler sans remboursement les laisserait sans recours
+    if (project.amount_raised or 0) > 0:
+        flash("Ce projet a des fonds collectés : remboursez d'abord les contributions avant de le supprimer.", 'danger')
+        return redirect(url_for('admin.project_detail', project_id=project_id))
+
     # Soft delete
+    record_audit('project.delete', project, previous_status=project.status)
     project.is_published = False
     project.status = ProjectStatus.CANCELLED
-    
     db.session.commit()
     
     flash('Projet supprimé avec succès', 'success')
@@ -521,16 +533,28 @@ def stats():
 def settings():
     """Paramètres de la plateforme"""
     if request.method == 'POST':
-        # Mettre à jour les paramètres
+        # Mettre à jour les paramètres (validés avant toute écriture)
         from app.utils.config import set_config_value
-        
+        try:
+            commission_rate = float(request.form.get('commission_rate', 3.0))
+            min_contribution = int(request.form.get('min_contribution', 100))
+            max_contribution = int(request.form.get('max_contribution', 10000000))
+            if not 0 <= commission_rate <= 20:
+                raise ValueError('Le taux de commission doit être compris entre 0 et 20 %')
+            if min_contribution <= 0 or max_contribution < min_contribution:
+                raise ValueError('Contribution minimale > 0 et maximale >= minimale requises')
+        except ValueError as e:
+            flash(str(e) if 'doit' in str(e) or 'requises' in str(e) else 'Valeurs numériques invalides', 'danger')
+            return redirect(url_for('admin.settings'))
+        record_audit('settings.update', target_type='settings', commission_rate=commission_rate,
+                     min_contribution=min_contribution, max_contribution=max_contribution)
+        db.session.commit()
         set_config_value('APP_NAME', request.form.get('app_name'))
-        set_config_value('COMMISSION_RATE', float(request.form.get('commission_rate', 3.0)))
-        set_config_value('MIN_CONTRIBUTION', int(request.form.get('min_contribution', 100)))
-        set_config_value('MAX_CONTRIBUTION', int(request.form.get('max_contribution', 10000000)))
+        set_config_value('COMMISSION_RATE', commission_rate)
+        set_config_value('MIN_CONTRIBUTION', min_contribution)
+        set_config_value('MAX_CONTRIBUTION', max_contribution)
         set_config_value('CONTACT_EMAIL', request.form.get('contact_email'))
         set_config_value('SUPPORT_EMAIL', request.form.get('support_email'))
-        
         flash('Paramètres mis à jour avec succès', 'success')
         return redirect(url_for('admin.settings'))
     

@@ -2,6 +2,7 @@
 Routes pour les utilisateurs
 """
 
+from app.utils.audit import record_audit
 from app.utils.validators import validate_url
 from app.utils.pagination import per_page_arg
 from app.models.contribution import Contribution
@@ -235,11 +236,12 @@ def update_user(user_id):
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
 
+    if 'role' in values and values['role'] != user.role:
+        record_audit('user.role_change', user, old=user.role, new=values['role'])
     for field, value in values.items():
         setattr(user, field, value)
 
     db.session.commit()
-    
     return jsonify({
         'message': 'Utilisateur mis à jour',
         'user': user.to_dict()
@@ -258,8 +260,9 @@ def delete_user(user_id):
         return jsonify({'error': 'Vous ne pouvez pas supprimer votre propre compte'}), 400
     
     user.is_active = False
+    record_audit('user.deactivate', user)
     db.session.commit()
-    
+
     return jsonify({'message': 'Utilisateur désactivé'}), 200
 
 

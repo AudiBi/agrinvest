@@ -2,6 +2,7 @@
 Routes d'administration
 """
 
+from app.utils.audit import record_audit
 from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
@@ -65,6 +66,46 @@ def list_all_users():
     }), 200
 
 
+@admin_bp.route('/audit-logs', methods=['GET'])
+@login_required
+@admin_required
+def list_audit_logs():
+    """Journal d'audit (lecture seule). Filtres : action (préfixe), actor_id, target_type, target_id, since, until"""
+    from datetime import datetime, timedelta
+    from app.models import AuditLog
+
+    query = AuditLog.query
+    if request.args.get('action'):
+        # « % » et « _ » sont cherchés littéralement (jamais comme jokers SQL)
+        prefix = request.args['action'].replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        query = query.filter(AuditLog.action.like(prefix + '%', escape='\\'))
+    if request.args.get('actor_id', type=int) is not None:
+        query = query.filter_by(actor_id=request.args.get('actor_id', type=int))
+    if request.args.get('target_type'):
+        query = query.filter_by(target_type=request.args['target_type'])
+    if request.args.get('target_id', type=int) is not None:
+        query = query.filter_by(target_id=request.args.get('target_id', type=int))
+    try:
+        if request.args.get('since'):
+            query = query.filter(AuditLog.created_at >= datetime.strptime(request.args['since'], '%Y-%m-%d'))
+        if request.args.get('until'):
+            until = datetime.strptime(request.args['until'], '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(AuditLog.created_at < until)
+    except ValueError:
+        return jsonify({'error': 'since / until : format AAAA-MM-JJ attendu'}), 400
+
+    page = request.args.get('page', 1, type=int)
+    pagination = query.order_by(AuditLog.created_at.desc(), AuditLog.id.desc()).paginate(
+        page=page, per_page=per_page_arg(50), error_out=False)
+    return jsonify({
+        'logs': [entry.to_dict() for entry in pagination.items],
+        'total': pagination.total,
+        'page': page,
+        'per_page': pagination.per_page,
+        'pages': pagination.pages
+    }), 200
+
+
 @admin_bp.route('/users/<int:user_id>/verify', methods=['POST'])
 @login_required
 @admin_required
@@ -73,6 +114,7 @@ def verify_user(user_id):
     user = User.query.get_or_404(user_id)
     user.is_verified = True
     user.email_verified_at = utc_now()
+    record_audit('user.verify', user)
     db.session.commit()
     
     return jsonify({'message': 'Utilisateur vérifié'}), 200
@@ -88,6 +130,7 @@ def approve_ambassador(user_id):
         return jsonify({'message': 'Déjà ambassadeur'}), 200
     if user.role != 'investor' or not user.is_diaspora:
         return jsonify({'error': 'Seul un investisseur de la diaspora peut devenir ambassadeur'}), 409
+    record_audit('user.role_change', user, old=user.role, new='ambassador')
     user.role = 'ambassador'
     db.session.commit()
     return jsonify({'message': 'Rôle ambassadeur accordé'}), 200
@@ -104,8 +147,9 @@ def ban_user(user_id):
         return jsonify({'error': 'Vous ne pouvez pas vous bannir vous-même'}), 400
     
     user.is_active = False
+    record_audit('user.ban', user)
     db.session.commit()
-    
+
     return jsonify({'message': 'Utilisateur banni'}), 200
 
 
@@ -116,8 +160,9 @@ def unban_user(user_id):
     """Débannit un utilisateur"""
     user = User.query.get_or_404(user_id)
     user.is_active = True
+    record_audit('user.unban', user)
     db.session.commit()
-    
+
     return jsonify({'message': 'Utilisateur débanni'}), 200
 
 
@@ -157,8 +202,8 @@ def approve_project(project_id):
         return jsonify({'error': f'Un projet « {project.status} » ne peut pas être approuvé'}), 409
 
     project.is_verified = True
+    record_audit('project.approve', project)
     project.publish()
-    
     # Notifier l'agriculteur
     # send_project_approved_notification(project)
     
@@ -180,8 +225,9 @@ def reject_project(project_id):
 
     project.status = 'draft'
     project.is_published = False
+    record_audit('project.reject', project, reason=reason)
     db.session.commit()
-    
+
     # Notifier l'agriculteur avec la raison
     # send_project_rejected_notification(project, reason)
     

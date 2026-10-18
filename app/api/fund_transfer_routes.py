@@ -2,6 +2,7 @@
 Routes pour les transferts internationaux
 """
 
+from app.utils.audit import record_audit
 from app.utils.pagination import per_page_arg
 from app.models.user import utc_now
 from flask import request, jsonify, Blueprint
@@ -128,7 +129,9 @@ def create_transfer_batch():
     )
     
     db.session.add(transfer)
-    
+    record_audit('transfer.create', target_type='fund_transfer', batch_id=batch_id, amount_htg=total_amount,
+                 contribution_count=len(included_ids), destination_bank=data.get('destination_bank'))
+
     # Marquer les contributions
     for contribution in contributions:
         contribution.transfer_batch_id = batch_id
@@ -176,6 +179,7 @@ def update_transfer_status(transfer_id):
     if new_status and new_status != transfer.status:
         if new_status not in TRANSFER_TRANSITIONS.get(transfer.status, ()):
             return jsonify({'error': f'Transition « {transfer.status} » -> « {new_status} » interdite'}), 409
+        record_audit('transfer.status', transfer, batch_id=transfer.batch_id, old=transfer.status, new=new_status)
         transfer.status = new_status
 
         if new_status == 'completed':

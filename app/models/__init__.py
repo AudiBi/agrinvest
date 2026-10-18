@@ -22,6 +22,7 @@ from app.models.platform_commission import (
     CommissionAuditLog
 )
 from app.models.analytics import AnalyticsEvent
+from app.models.audit import AuditLog
 from app.models.enums import (
     UserRole,
     ProjectStatus,
@@ -56,6 +57,7 @@ __all__ = [
     'CEOPayout',
     'CommissionAuditLog',
     'AnalyticsEvent',
+    'AuditLog',
     'Notification',
     # Enums
     'UserRole',

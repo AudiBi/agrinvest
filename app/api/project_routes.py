@@ -2,6 +2,7 @@
 Routes pour les projets
 """
 
+from app.utils.audit import record_audit
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from app.models.user import utc_now
@@ -321,11 +322,14 @@ def update_project(project_id):
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
 
+    if current_user.is_admin and any(f in fields for f in MONEY_FIELDS):
+        # Modification des conditions financières par un administrateur : valeurs avant / après
+        record_audit('project.update_financial', project, changes={
+            f: [str(getattr(project, f)), str(fields[f])] for f in MONEY_FIELDS if f in fields})
     for field, value in fields.items():
         setattr(project, field, value)
 
     db.session.commit()
-    
     return jsonify({
         'message': 'Projet mis à jour',
         'project': project.to_dict()
@@ -369,10 +373,11 @@ def unpublish_project(project_id):
     """Dépublie un projet (admin seulement)"""
     project = Project.query.get_or_404(project_id)
     
+    record_audit('project.unpublish', project, previous_status=project.status)
     project.is_published = False
     project.status = 'draft'
     db.session.commit()
-    
+
     return jsonify({'message': 'Projet dépublié'}), 200
 
 
@@ -383,6 +388,7 @@ def feature_project(project_id):
     """Met un projet à la une (admin seulement)"""
     project = Project.query.get_or_404(project_id)
     project.is_featured = True
+    record_audit('project.feature', project)
     db.session.commit()
     
     return jsonify({'message': 'Projet ajouté à la une'}), 200
@@ -395,6 +401,7 @@ def unfeature_project(project_id):
     """Retire un projet de la une (admin seulement)"""
     project = Project.query.get_or_404(project_id)
     project.is_featured = False
+    record_audit('project.unfeature', project)
     db.session.commit()
     
     return jsonify({'message': 'Projet retiré de la une'}), 200
