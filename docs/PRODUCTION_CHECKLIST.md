@@ -22,13 +22,15 @@ L'application **refuse de démarrer** sans `SECRET_KEY` ni `DATABASE_URL` en pro
 ## 2. Base de données
 
 - [ ] PostgreSQL 16, sauvegardes automatiques **et un test de restauration réussi**
-- [ ] `flask db upgrade` sur la base vide — **jamais** `init-db` ni `init_db.py` (ils sont refusés hors développement)
+- [ ] `flask db upgrade` sur la base vide — **jamais** `init-db` ni `init_db.py` (ils sont refusés hors développement).
+      Avec `docker-compose.yml`, le service `migrate` l'exécute avant le démarrage de l'application.
 - [ ] `flask db check` ne signale aucun écart
 - [ ] La session PostgreSQL est forcée en UTC par l'application (rien à régler), mais vérifiez le fuseau du serveur
 
 ## 3. Premier démarrage
 
-- [ ] `flask create-admin` : crée le premier administrateur (mot de passe fort exigé, jamais affiché)
+- [ ] `flask create-admin` : crée le premier administrateur (mot de passe fort exigé, jamais affiché) —
+      avec Docker : `docker compose run --rm web flask --app wsgi create-admin`
 - [ ] Se connecter, puis changer le mot de passe si l'administrateur a été créé par un tiers
 - [ ] Créer les **points de collecte** (`POST /api/v1/collection-points`) et les rattacher aux projets
 - [ ] Créer les comptes **agents** puis les **rattacher à leurs points**
@@ -40,7 +42,8 @@ L'application **refuse de démarrer** sans `SECRET_KEY` ni `DATABASE_URL` en pro
 
 ## 4. Tâches planifiées
 
-- [ ] `flask reconcile-payments` **toutes les 15 minutes** (cron, tâche planifiée ou service dédié).
+- [ ] `flask reconcile-payments` **toutes les 15 minutes** (cron, tâche planifiée ou service dédié ;
+      le service `scheduler` de `docker-compose.yml` le fait).
       Elle confirme les paiements dont le webhook s'est perdu et expire les paiements abandonnés après
       24 h (`PENDING_PAYMENT_TTL_HOURS`). Les paiements en espèces ne sont pas concernés.
 

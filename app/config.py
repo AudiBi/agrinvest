@@ -68,6 +68,7 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@agrinvest.com')
+    CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL')  # destinataire du formulaire de contact
     MAIL_MAX_EMAILS = 50
     MAIL_ASCII_ATTACHMENTS = False
 

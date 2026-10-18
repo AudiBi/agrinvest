@@ -1,21 +1,41 @@
 # Exemple de déploiement : copier .env.example en .env, renseigner les secrets, puis `docker compose up -d`
+# Les migrations sont appliquées avant le démarrage de l'application (service `migrate`), et les
+# paiements restés en attente sont réconciliés toutes les 15 minutes (service `scheduler`).
+x-app: &app
+  build: .
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://agrinvest:${POSTGRES_PASSWORD}@db:5432/agrinvest
+    REDIS_URL: redis://redis:6379/0
+
 services:
-  web:
-    build: .
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql://agrinvest:${POSTGRES_PASSWORD}@db:5432/agrinvest
-      REDIS_URL: redis://redis:6379/0
-    ports:
-      - "8000:8000"
+  migrate:
+    <<: *app
+    command: ["flask", "--app", "wsgi", "db", "upgrade"]
     depends_on:
       db:
         condition: service_healthy
+
+  web:
+    <<: *app
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_started
     volumes:
       - uploads:/app/uploads
       - logs:/app/logs
+    restart: unless-stopped
+
+  scheduler:
+    <<: *app
+    command: ["sh", "-c", "while true; do flask --app wsgi reconcile-payments; sleep 900; done"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   db:
