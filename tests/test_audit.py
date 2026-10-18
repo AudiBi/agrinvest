@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 
 from app.extensions import db
-from app.models import (AuditLog, CollectionPoint, Contribution, Project, ProjectCollectionPoint, User)
+from app.models import (AuditLog, CollectionPoint, CollectionPointAgent, Contribution, Project, ProjectCollectionPoint, User)
 from app.models.contribution import utc_now
 from app.models.enums import ContributionStatus, ProjectStatus, UserRole
 from tests.conftest import login_as, make_user
@@ -165,6 +165,7 @@ def test_cash_receipts_identify_the_agent(client, project, investor):
     db.session.add(point)
     db.session.flush()
     db.session.add(ProjectCollectionPoint(project_id=project.id, collection_point_id=point.id))
+    db.session.add(CollectionPointAgent(collection_point_id=point.id, agent_id=agent.id))
     c = Contribution(investor_id=investor.id, project_id=project.id, amount=Decimal('1000'), currency='HTG',
                      amount_htg=Decimal('1000'), payment_method='cash')
     db.session.add(c)

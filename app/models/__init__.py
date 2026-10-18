@@ -7,7 +7,7 @@ from app.models.user import User
 from app.models.project import Project
 from app.models.contribution import Contribution
 from app.models.group_contribution import GroupContribution, GroupContributionInvite
-from app.models.collection_point import CollectionPoint, ProjectCollectionPoint
+from app.models.collection_point import CollectionPoint, ProjectCollectionPoint, CollectionPointAgent
 from app.models.diaspora_campaign import DiasporaCampaign
 from app.models.fund_transfer import FundTransfer, InternationalTransferPartner
 from app.models.harvest_update import HarvestUpdate
@@ -43,6 +43,7 @@ __all__ = [
     'GroupContributionInvite',
     'CollectionPoint',
     'ProjectCollectionPoint',
+    'CollectionPointAgent',
     'DiasporaCampaign',
     'FundTransfer',
     'InternationalTransferPartner',

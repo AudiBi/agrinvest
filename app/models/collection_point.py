@@ -69,3 +69,22 @@ class ProjectCollectionPoint(db.Model):
     __table_args__ = (
         Index('idx_project_collection_unique', 'project_id', 'collection_point_id', unique=True),
     )
+
+
+class CollectionPointAgent(db.Model):
+    """Agent autorisé à encaisser des espèces à un point de collecte."""
+    __tablename__ = 'collection_point_agents'
+
+    id = db.Column(db.Integer, primary_key=True)
+    collection_point_id = db.Column(db.Integer, db.ForeignKey('collection_points.id', ondelete='CASCADE'),
+                                    nullable=False, index=True)
+    agent_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'),
+                         nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utc_now)
+
+    point = db.relationship('CollectionPoint', backref=db.backref('agent_links', lazy='dynamic'))
+    agent = db.relationship('User')
+
+    __table_args__ = (
+        Index('idx_collection_point_agent_unique', 'collection_point_id', 'agent_id', unique=True),
+    )

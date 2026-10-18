@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 
 from app.extensions import db
-from app.models import (CollectionPoint, Contribution, DiasporaCampaign, GroupContribution,
+from app.models import (CollectionPoint, CollectionPointAgent, Contribution, DiasporaCampaign, GroupContribution,
                         GroupContributionInvite, Notification, ProjectCollectionPoint, User)
 from app.models.contribution import utc_now
 from app.models.enums import ContributionStatus, UserRole
@@ -36,12 +36,13 @@ def agent(app):
 
 
 @pytest.fixture()
-def point(project):
+def point(project, agent):
     p = CollectionPoint(name='Point Nord', department='Nord', commune='Cap', address='Rue 1',
                         fee_percentage=Decimal('2'))
     db.session.add(p)
     db.session.flush()
     db.session.add(ProjectCollectionPoint(project_id=project.id, collection_point_id=p.id))
+    db.session.add(CollectionPointAgent(collection_point_id=p.id, agent_id=agent.id))
     db.session.commit()
     return p
 
