@@ -4,9 +4,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_ENV=production
 
-# psycopg2 (source) a besoin d'un compilateur et de libpq
+# psycopg2 (source) a besoin d'un compilateur et de libpq ; pycairo (PDF des contrats) de Cairo et pkg-config
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev libcairo2-dev pkg-config curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

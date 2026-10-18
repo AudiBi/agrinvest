@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: '3.14'
           cache: pip
-      - run: sudo apt-get update && sudo apt-get install -y libpq-dev
+      - run: sudo apt-get update && sudo apt-get install -y libpq-dev libcairo2-dev pkg-config
       - run: pip install -r requirements.txt pytest pyflakes
       - name: Les migrations s'appliquent sur une base vide
         run: flask --app run db upgrade
