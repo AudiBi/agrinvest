@@ -116,6 +116,9 @@ def create_app(config_name=None):
     # Enregistrement des blueprints (UNIQUEMENT ICI, pas deux fois)
     _register_blueprints(app)
     
+    # Sonde de santé (load balancer / orchestrateur)
+    _register_health_check(app)
+    
     # Enregistrement des filtres Jinja2 personnalisés
     _register_template_filters(app)
     
@@ -224,6 +227,21 @@ def _register_blueprints(app):
         raise
     
     app.logger.info("🚀 Tous les blueprints ont été enregistrés")
+
+
+def _register_health_check(app):
+    """GET /health : 200 si l'application et la base répondent, 503 sinon."""
+    from sqlalchemy import text
+
+    @app.route('/health')
+    @limiter.exempt
+    def health():
+        try:
+            db.session.execute(text('SELECT 1'))
+        except Exception as e:
+            app.logger.error(f"Health check: base de données indisponible: {e}")
+            return jsonify({'status': 'unavailable'}), 503
+        return jsonify({'status': 'ok'}), 200
 
 
 def _register_template_filters(app):
