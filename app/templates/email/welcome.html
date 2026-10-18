@@ -1,0 +1,8 @@
+{% extends 'email/_layout.html' %}
+{% block body %}
+<h1>Bienvenue sur AgriInvest Haïti !</h1>
+<p>Bonjour {{ user.name }},</p>
+<p>Votre compte a bien été créé. Pour confirmer votre adresse email, cliquez sur le bouton ci-dessous (lien valable 3 jours) :</p>
+<p><a class="button" href="{{ base_url }}{{ url_for('main.verify_email', token=token) }}">Confirmer mon adresse email</a></p>
+<p>Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement ce message.</p>
+{% endblock %}

@@ -115,6 +115,33 @@ def create_paypal_payment(contribution, return_url, cancel_url):
         return None
 
 
+def capture_paypal_order(order_id):
+    """Capture une commande PayPal approuvée par l'acheteur (sans cela, aucun fonds n'est prélevé).
+
+    Idempotent côté PayPal grâce à PayPal-Request-Id : rejouer l'appel ne capture pas deux fois.
+    Retourne le JSON de la capture, ou None en cas d'échec.
+    """
+    token = get_paypal_access_token()
+    if not token or not order_id:
+        return None
+
+    try:
+        response = requests.post(
+            f"{get_paypal_api_url()}/checkout/orders/{order_id}/capture",
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/json',
+                'PayPal-Request-Id': f'capture-{order_id}',
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        current_app.logger.error(f"PayPal capture error ({order_id}): {e}")
+        return None
+
+
 def handle_paypal_webhook(request_body, headers):
     """
     Gère les webhooks PayPal
@@ -253,8 +280,9 @@ def retrieve_paypal_payment(order_id):
 
 
 def _handle_order_approved(resource):
-    """Gère une commande approuvée"""
-    pass
+    """Commande approuvée par l'acheteur : on capture les fonds (la confirmation vient de
+    PAYMENT.CAPTURE.COMPLETED ou de la réconciliation)."""
+    capture_paypal_order(resource.get('id'))
 
 
 def _handle_payment_completed(resource):
@@ -264,10 +292,14 @@ def _handle_payment_completed(resource):
     
     custom_id = resource.get('custom_id')
     if custom_id:
-        contribution = Contribution.query.get(int(custom_id))
-        if contribution and contribution.status == 'pending':
+        from app.utils.payments import CONFIRMABLE_STATUSES, payment_matches
+        contribution = db.session.get(Contribution, int(custom_id))
+        amount = resource.get('amount') or {}
+        if (contribution and contribution.status in CONFIRMABLE_STATUSES
+                and payment_matches(contribution, amount.get('value'), amount.get('currency_code'))):
             contribution.mark_completed()
-            db.session.commit()
+        elif contribution and contribution.status == 'pending':
+            current_app.logger.error(f"PayPal: montant/devise inattendus pour la contribution {contribution.id}")
 
 
 def _handle_refund_completed(resource):

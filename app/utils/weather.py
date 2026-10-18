@@ -6,7 +6,7 @@ Intégration avec OpenWeatherMap, NOAA, CNIGS Haïti
 
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from flask import current_app
 from typing import Dict, List, Optional, Tuple
@@ -756,6 +756,7 @@ def _get_crop_specific_advice(crop_type: str, weather_data: Dict) -> Dict:
     
     temperature = weather_data.get('temperature', 25)
     humidity = weather_data.get('humidity', 70)
+    wind_speed = weather_data.get('wind_speed', 0)
     
     if crop_type == 'rice':
         if temperature < 20:

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Trop de requêtes{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 text-success">429</h1>
+    <h2>Trop de requêtes</h2>
+    <p class="mb-4">Vous avez effectué trop de tentatives. Veuillez patienter avant de réessayer.</p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-success">Retour à l'accueil</a>
+</div>
+{% endblock %}

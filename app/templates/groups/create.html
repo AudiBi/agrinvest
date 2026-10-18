@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer une cagnotte - AgriInvest Haïti{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Créer une cagnotte</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label" for="project_id">Projet à soutenir</label>
+                            <select id="project_id" name="project_id" class="form-select" required>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="group_name">Nom de la cagnotte</label>
+                            <input type="text" id="group_name" name="group_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="group_type">Type</label>
+                            <select id="group_type" name="group_type" class="form-select">
+                                <option value="family">Famille</option>
+                                <option value="friends">Amis</option>
+                                <option value="community">Communauté</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-8 mb-3">
+                                <label class="form-label" for="target_amount">Objectif</label>
+                                <input type="number" id="target_amount" name="target_amount" class="form-control"
+                                       min="1" step="0.01" required>
+                            </div>
+                            <div class="col-4 mb-3">
+                                <label class="form-label" for="currency">Devise</label>
+                                <select id="currency" name="currency" class="form-select">
+                                    <option>USD</option><option>EUR</option><option>CAD</option><option>HTG</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="expires_at">Date limite (optionnel)</label>
+                            <input type="date" id="expires_at" name="expires_at" class="form-control">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_public" name="is_public">
+                            <label class="form-check-label" for="is_public">Cagnotte publique</label>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Créer la cagnotte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

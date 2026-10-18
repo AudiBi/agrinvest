@@ -54,7 +54,9 @@ class Config:
     # Rate Limiting
     RATELIMIT_ENABLED = True
     RATELIMIT_DEFAULT = "200 per day;50 per hour"
-    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    # Stockage partagé entre workers (Redis si REDIS_URL est défini), sinon mémoire du processus
+    RATELIMIT_STORAGE_URI = os.environ.get('REDIS_URL') or 'memory://'
+    RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True  # Redis indisponible: dégradé, pas de 500
 
     # =========================================================================
     # EMAIL (Flask-Mail)
@@ -66,6 +68,7 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@agrinvest.com')
+    CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL')  # destinataire du formulaire de contact
     MAIL_MAX_EMAILS = 50
     MAIL_ASCII_ATTACHMENTS = False
 
@@ -301,6 +304,9 @@ class Config:
     MAX_PROJECT_TITLE_LENGTH = 200
     MAX_USER_NAME_LENGTH = 100
     MAX_CONTRIBUTION_MESSAGE_LENGTH = 500
+    # Si vrai, un agriculteur « publie » en réalité en soumettant son projet à un administrateur
+    REQUIRE_PROJECT_APPROVAL = os.environ.get('REQUIRE_PROJECT_APPROVAL', 'false').lower() == 'true'
+    PENDING_PAYMENT_TTL_HOURS = 24  # au-delà, une contribution non payée est expirée (réconciliation)
     MIN_CONTRIBUTION_AMOUNT = 100  # 100 HTG minimum
     MAX_CONTRIBUTION_AMOUNT = 10000000  # 10M HTG maximum
     
@@ -377,7 +383,7 @@ class DevelopmentConfig(Config):
     )
     
     # Mode test pour les paiements
-    STRIPE_PUBLIC_KEY = 'pk_test_...'
+    STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
     PAYPAL_MODE = 'sandbox'
     MONCASH_ENVIRONMENT = 'sandbox'
     
@@ -399,8 +405,8 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
     
-    # Base de données en mémoire
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    # SQLite en mémoire par défaut ; TEST_DATABASE_URL (PostgreSQL) pour tester comme en production
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
     SQLALCHEMY_ENGINE_OPTIONS = {}  # pool_size invalide avec SQLite en mémoire (StaticPool)
     
     # Désactiver les services externes

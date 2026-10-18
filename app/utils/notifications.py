@@ -3,6 +3,7 @@
 Système de notifications pour AgriInvest Haïti
 """
 
+from app.models.user import utc_now
 from flask import current_app
 from app.extensions import db
 from app.models import Notification
@@ -141,3 +142,35 @@ def delete_old_notifications(days=30):
     
     db.session.commit()
     return deleted
+
+
+SEVERITY_ORDER = {'info': 0, 'warning': 1, 'critical': 2}
+
+
+def send_weather_alert_notifications(alert):
+    """Notifie les agriculteurs abonnés à la zone de l'alerte (notification dans l'application).
+
+    Respecte la gravité minimale choisie par chaque abonné. Retourne le nombre de personnes notifiées.
+    """
+    from app.models import WeatherSubscription
+
+    subscriptions = WeatherSubscription.query.filter_by(zone=alert.zone, is_active=True).all()
+    level = SEVERITY_ORDER.get(alert.severity, 0)
+    notified = 0
+    for subscription in subscriptions:
+        if SEVERITY_ORDER.get(subscription.min_severity, 1) > level:
+            continue
+        language = subscription.language or 'ht'
+        message = getattr(alert, f'message_{language}', None) or alert.message_ht
+        if send_notification(
+            user_id=subscription.farmer_id,
+            title=f'Alerte météo - {alert.zone}',
+            message=message,
+            notification_type='danger' if alert.severity == 'critical' else 'warning',
+            data={'alert_id': alert.id, 'severity': alert.severity},
+        ):
+            subscription.last_notified_at = utc_now()
+            notified += 1
+    alert.sent_at = utc_now()
+    db.session.commit()
+    return notified

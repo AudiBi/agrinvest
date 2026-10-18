@@ -5,8 +5,11 @@ Routes d'authentification
 from flask import request, jsonify, current_app, Blueprint
 from flask_login import login_user, logout_user, login_required, current_user
 from app.api import api_bp
+from app.models.user import utc_now
 from app.models import User
 from app.extensions import db
+from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 from app.utils.decorators import rate_limit
 from app.utils.validators import validate_email, validate_password
 
@@ -63,7 +66,7 @@ def register():
     user = User(
         name=data['name'],
         email=data['email'],
-        role=data.get('role', 'investor'),
+        role=data.get('role') if data.get('role') in ('investor', 'farmer') else 'investor',
         phone=data.get('phone'),
         location=data.get('location'),
         country=data.get('country'),
@@ -74,6 +77,9 @@ def register():
     
     db.session.add(user)
     db.session.commit()
+    
+    if not EmailService.send_welcome_email(user):
+        current_app.logger.error(f"Échec d'envoi de l'email de bienvenue à l'utilisateur {user.id}")
     
     # Connexion automatique
     login_user(user)
@@ -188,13 +194,13 @@ def reset_password_request():
     data = request.get_json()
     email = data.get('email')
     
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email).first() if email else None
     if user:
-        # Générer un token
-        token = user.generate_reset_token()
-        # Envoyer l'email (à implémenter)
-        # send_reset_email(user.email, token)
-        pass
+        try:
+            token = AuthService.generate_reset_token(user.email)
+            EmailService.send_password_reset_email(user, token)
+        except Exception as e:
+            current_app.logger.error(f"Erreur envoi email de réinitialisation: {e}")
     
     # Toujours retourner la même réponse pour éviter le probing
     return jsonify({'message': 'Si cet email existe, vous recevrez un lien de réinitialisation'}), 200
@@ -203,27 +209,35 @@ def reset_password_request():
 @auth_bp.route('/password/reset', methods=['POST'])
 def reset_password():
     """Réinitialisation du mot de passe"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     token = data.get('token')
     new_password = data.get('new_password')
     
-    if not validate_password(new_password):
+    if not token or not new_password or not validate_password(new_password):
         return jsonify({'error': 'Le mot de passe doit contenir au moins 8 caractères'}), 400
     
-    user = User.verify_reset_token(token)
-    if not user:
+    if not AuthService.reset_password(token, new_password):
         return jsonify({'error': 'Token invalide ou expiré'}), 400
     
-    user.set_password(new_password)
-    db.session.commit()
-    
     return jsonify({'message': 'Mot de passe réinitialisé avec succès'}), 200
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+@login_required
+@rate_limit(limit=3, per=3600)
+def resend_verification():
+    """Renvoie le lien de vérification de l'adresse email"""
+    if current_user.is_verified:
+        return jsonify({'message': 'Adresse déjà vérifiée'}), 200
+    if not EmailService.send_verification_email(current_user):
+        return jsonify({'error': "L'email n'a pas pu être envoyé, réessayez plus tard"}), 503
+    return jsonify({'message': 'Email de vérification envoyé'}), 200
 
 
 @auth_bp.route('/verify-email/<token>', methods=['GET'])
 def verify_email(token):
     """Vérification de l'email"""
-    user = User.verify_email_token(token)
+    user = AuthService.verify_email_token(token)
     if not user:
         return jsonify({'error': 'Token invalide ou expiré'}), 400
     

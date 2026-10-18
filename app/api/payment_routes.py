@@ -8,6 +8,8 @@ from app.api import api_bp
 from app.models import PaymentGatewayConfig, Contribution, Project
 from app.extensions import db
 import stripe
+from decimal import Decimal
+from app.utils.payments import CONFIRMABLE_STATUSES, payment_matches
 
 
 payment_bp = Blueprint('payments', __name__, url_prefix='/payments')
@@ -36,8 +38,24 @@ def stripe_webhook():
             stripe_payment_intent_id=payment_intent['id']
         ).first()
         
-        if contribution and contribution.status == 'pending':
+        if contribution and contribution.status in CONFIRMABLE_STATUSES:
+            paid = Decimal(payment_intent.get('amount_received', payment_intent['amount'])) / 100
+            if not payment_matches(contribution, paid, payment_intent.get('currency')):
+                current_app.logger.error(
+                    f"Stripe: montant/devise inattendus pour la contribution {contribution.id} "
+                    f"({paid} {payment_intent.get('currency')}), confirmation refusée")
+                return jsonify({'status': 'amount_mismatch'}), 200
             contribution.mark_completed()
+    
+    elif event['type'] == 'charge.refunded':
+        charge = event['data']['object']
+        contribution = Contribution.query.filter_by(
+            stripe_payment_intent_id=charge.get('payment_intent')).first()
+        if contribution and charge.get('refunded'):  # remboursement TOTAL uniquement
+            contribution.mark_refunded()
+        elif contribution:
+            current_app.logger.warning(
+                f"Stripe: remboursement partiel de la contribution {contribution.id} ignoré (traitement manuel)")
     
     elif event['type'] == 'payment_intent.payment_failed':
         payment_intent = event['data']['object']
@@ -45,7 +63,7 @@ def stripe_webhook():
             stripe_payment_intent_id=payment_intent['id']
         ).first()
         
-        if contribution:
+        if contribution and contribution.status == 'pending':
             contribution.mark_failed()
     
     return jsonify({'status': 'success'}), 200

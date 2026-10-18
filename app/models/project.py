@@ -210,6 +210,20 @@ class Project(db.Model):
             self.status = ProjectStatus.FUNDED
         db.session.commit()
 
+    def submit_for_publication(self):
+        """Publie le projet, ou le place en file de modération si REQUIRE_PROJECT_APPROVAL est actif.
+
+        Retourne True si le projet est publié, False s'il attend la validation d'un administrateur.
+        """
+        from flask import current_app
+        if current_app.config.get('REQUIRE_PROJECT_APPROVAL'):
+            self.status = ProjectStatus.PENDING
+            self.is_published = False
+            db.session.commit()
+            return False
+        self.publish()
+        return True
+
     def publish(self):
         self.is_published = True
         self.status = ProjectStatus.PUBLISHED
@@ -225,14 +239,19 @@ class Project(db.Model):
              (PlatformCommissionConfig.valid_until >= utc_now())),
             (PlatformCommissionConfig.project_category.is_(None) | 
              (PlatformCommissionConfig.project_category == self.category))
-        ).order_by(PlatformCommissionConfig.is_default.desc()).first()
+        ).order_by(
+            PlatformCommissionConfig.project_category.is_(None).asc(),  # catégorie du projet d'abord
+            PlatformCommissionConfig.is_default.desc()
+        ).first()
         
         if not config:
             from app.models.platform_commission import PlatformCommissionConfig
             config = PlatformCommissionConfig(
                 percentage=Decimal('3.0'),
                 commission_type='platform_fee',
-                is_default=True
+                is_default=True,
+                min_amount_to_apply=Decimal('0'),
+                fixed_fee=Decimal('0'),
             )
         return config
 

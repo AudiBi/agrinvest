@@ -3,7 +3,7 @@ Modèles pour les commissions de la plateforme et du CEO
 """
 
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import Index, CheckConstraint
 from app.extensions import db
 from app.models.enums import CommissionType
@@ -53,15 +53,22 @@ class PlatformCommissionConfig(db.Model):
     )
     
     def calculate_commission(self, amount):
-        if amount < self.min_amount_to_apply:
+        # Les defaults de colonnes ne s'appliquent qu'à l'INSERT : une config non persistée
+        # (repli quand la table est vide) a ces champs à None.
+        amount = Decimal(str(amount))
+        if amount < (self.min_amount_to_apply or 0):
             return Decimal(0)
         
-        percentage_commission = (Decimal(str(amount)) * self.percentage) / Decimal(100)
-        fixed_commission = self.fixed_fee
+        percentage_commission = (amount * self.percentage) / Decimal(100)
+        fixed_commission = self.fixed_fee or Decimal(0)
         total_commission = percentage_commission + fixed_commission
         
         if self.max_amount and amount > self.max_amount:
-            total_commission = total_commission * Decimal(0.5)
+            total_commission = total_commission * Decimal('0.5')
+
+        total_commission = total_commission.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        total_commission = total_commission.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         
         return total_commission
     
@@ -112,6 +119,8 @@ class PlatformEarning(db.Model):
     
     created_at = db.Column(db.DateTime, default=utc_now, index=True)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
+    
+    project = db.relationship('Project', foreign_keys=[project_id])
     
     __table_args__ = (
         CheckConstraint('commission_amount >= 0', name='check_positive_commission'),

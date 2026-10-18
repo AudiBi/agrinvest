@@ -9,30 +9,6 @@ from app.models.enums import ContributionStatus, ProjectStatus, UserRole
 
 
 @pytest.fixture()
-def investor(app):
-    user = User(email='inv@example.com', password='Passw0rd!x', role=UserRole.INVESTOR,
-                name='Ines Investor', country='HT')
-    db.session.add(user)
-    db.session.commit()
-    return user
-
-
-@pytest.fixture()
-def project(app):
-    farmer = User(email='farm@example.com', password='Passw0rd!x', role=UserRole.FARMER,
-                  name='Fred Farmer')
-    db.session.add(farmer)
-    db.session.flush()
-    p = Project(title='Café', slug='cafe', description='d', amount_needed=Decimal('1000000'),
-                farmer_id=farmer.id, status=ProjectStatus.PUBLISHED, is_published=True,
-                min_investment=Decimal('100'), currency='HTG',
-                deadline=datetime.now(timezone.utc) + timedelta(days=30))
-    db.session.add(p)
-    db.session.commit()
-    return p
-
-
-@pytest.fixture()
 def login(client, investor):
     with client.session_transaction() as sess:
         sess['_user_id'] = str(investor.id)
@@ -78,6 +54,7 @@ def test_gateway_failure_marks_failed(login, project, monkeypatch):
         raise RuntimeError('down')
 
     monkeypatch.setattr('app.utils.payments.process_paypal_payment', boom)
+    monkeypatch.setattr('app.utils.exchange_rates.get_exchange_rate', lambda a, b='HTG': Decimal('130'))
     invest(login, project, amount='500', payment_method='paypal')
     assert Contribution.query.one().status == ContributionStatus.FAILED
 

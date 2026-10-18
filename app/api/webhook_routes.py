@@ -10,6 +10,7 @@ from app.extensions import db
 import hmac
 import hashlib
 import stripe
+from app.utils.payments import CONFIRMABLE_STATUSES, payment_matches
 
 
 webhook_bp = Blueprint('webhooks', __name__, url_prefix='/webhooks')
@@ -68,12 +69,16 @@ def moncash_webhook():
     
     contribution = Contribution.query.filter_by(moncash_payment_id=payment_id).first() if payment_id else None
     
-    # Idempotence : un paiement déjà finalisé n'est jamais retraité
-    if contribution and contribution.status != ContributionStatus.COMPLETED:
-        if status == 'completed':
+    # Idempotence : COMPLETED/REFUNDED ne sont jamais retraités ; « failed » ne touche que PENDING
+    if contribution:
+        if status == 'completed' and contribution.status in CONFIRMABLE_STATUSES:
+            # MonCash facture en HTG ; si le montant figure dans la charge utile, il doit correspondre
+            if data.get('amount') is not None and not payment_matches(contribution, data['amount'], 'HTG'):
+                current_app.logger.error(f"MonCash: montant inattendu pour la contribution {contribution.id}")
+                return jsonify({'status': 'amount_mismatch'}), 200
             contribution.mark_completed()
             contribution.moncash_transaction_id = transaction_id
-        elif status == 'failed':
+        elif status == 'failed' and contribution.status == ContributionStatus.PENDING:
             contribution.mark_failed()
         
         db.session.commit()

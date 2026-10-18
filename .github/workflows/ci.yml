@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+      - run: sudo apt-get update && sudo apt-get install -y libpq-dev libcairo2-dev pkg-config
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pytest tests -q
+
+  docker:
+    # Vérifie ce qu'aucun test unitaire ne couvre : l'image se construit, gunicorn démarre
+    # l'application, la sonde /health répond, et le compose est valide.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction de l'image
+        run: docker build -t agrinvest:ci .
+      - name: Le conteneur démarre et répond sur /health
+        run: |
+          docker run -d --name app -p 8000:8000 \
+            -e SECRET_KEY=ci-only-secret -e DATABASE_URL=sqlite:////tmp/ci.db agrinvest:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then echo; exit 0; fi
+            sleep 2
+          done
+          docker logs app
+          exit 1
+      - name: Le conteneur tourne en utilisateur non privilégié
+        run: test "$(docker exec app id -u)" != "0"
+      - name: Le compose est valide
+        run: |
+          cp .env.example .env
+          POSTGRES_PASSWORD=ci docker compose config -q

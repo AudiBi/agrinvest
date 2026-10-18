@@ -1,0 +1,8 @@
+{% extends 'email/_layout.html' %}
+{% block body %}
+<h1>Nouvelle mise à jour de projet</h1>
+<p>Bonjour {{ user.name }},</p>
+<p>Le projet <strong>{{ project.title }}</strong> a publié une mise à jour :</p>
+<p><strong>{{ update.title }}</strong></p>
+<p><a class="button" href="{{ base_url }}{{ url_for('main.project_updates', project_id=project.id) }}">Lire la mise à jour</a></p>
+{% endblock %}

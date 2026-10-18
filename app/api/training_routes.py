@@ -2,6 +2,8 @@
 Routes pour les formations agricoles
 """
 
+from app.utils.validators import validate_url
+from app.utils.pagination import per_page_arg
 from flask import request, jsonify, send_file, Blueprint
 from flask_login import login_required, current_user
 from app.api import api_bp
@@ -18,7 +20,7 @@ training_bp = Blueprint('training', __name__, url_prefix='/trainings')
 def list_trainings():
     """Liste toutes les formations disponibles"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 12, type=int)
+    per_page = per_page_arg(12)
     category = request.args.get('category')
     difficulty = request.args.get('difficulty')
     region = request.args.get('region')
@@ -86,8 +88,9 @@ def get_featured_trainings():
 def get_training(training_id):
     """Récupère une formation spécifique"""
     training = Training.query.get_or_404(training_id)
+    if not training.is_published and not (current_user.is_authenticated and current_user.is_admin):
+        return jsonify({'error': 'Formation introuvable'}), 404
     language = request.args.get('lang', 'ht')
-    
     return jsonify(training.to_dict(language=language)), 200
 
 
@@ -97,8 +100,19 @@ def get_training(training_id):
 def update_progress(training_id):
     """Met à jour la progression d'une formation"""
     training = Training.query.get_or_404(training_id)
-    
-    data = request.get_json()
+    if not training.is_published:
+        return jsonify({'error': 'Formation introuvable'}), 404
+    data = request.get_json(silent=True) or {}
+
+    percentage = data.get('progress_percentage')
+    if 'progress_percentage' in data and (
+            isinstance(percentage, bool) or not isinstance(percentage, int) or not 0 <= percentage <= 100):
+        return jsonify({'error': 'progress_percentage doit être un entier entre 0 et 100'}), 400
+    seconds = data.get('last_position_seconds')
+    if 'last_position_seconds' in data and (
+            isinstance(seconds, bool) or not isinstance(seconds, int) or seconds < 0):
+        return jsonify({'error': 'last_position_seconds doit être un entier positif'}), 400
+
     progress = TrainingProgress.query.filter_by(
         farmer_id=current_user.id,
         training_id=training_id
@@ -184,8 +198,16 @@ def get_certificate(training_id):
 @admin_required
 def create_training():
     """Crée une nouvelle formation (admin seulement)"""
-    data = request.get_json()
-    
+    data = request.get_json(silent=True) or {}
+
+    missing = [f for f in ('title_ht', 'description_ht', 'content_type', 'content_url', 'category')
+               if not data.get(f)]
+    if missing:
+        return jsonify({'error': f'Champs requis : {", ".join(missing)}'}), 400
+    for url_field in ('content_url', 'thumbnail_url', 'content_url_light', 'audio_only_url'):
+        if data.get(url_field) and not validate_url(data[url_field]):
+            return jsonify({'error': f'{url_field} doit être une URL http(s) valide'}), 400
+
     training = Training(
         title_ht=data['title_ht'],
         title_fr=data.get('title_fr'),

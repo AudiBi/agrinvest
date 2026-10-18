@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Requête invalide{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 text-success">400</h1>
+    <h2>Requête invalide</h2>
+    <p class="mb-4">Votre requête n'a pas pu être traitée. Vérifiez les informations saisies.</p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-success">Retour à l'accueil</a>
+</div>
+{% endblock %}

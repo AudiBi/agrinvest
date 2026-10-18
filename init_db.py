@@ -32,8 +32,20 @@ def utc_now():
 
 def init_db():
     """Initialise la base de données avec des données de test"""
+    # Les messages contiennent des emojis : sans cela, la console Windows (cp1252) lève UnicodeEncodeError
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     
     app = create_app('development')
+    
+    # Ce script EFFACE toute la base puis crée des comptes aux mots de passe connus : jamais sur une
+    # base distante ni, sans confirmation explicite, sur une base locale autre que SQLite.
+    from app.utils.safety import check_safe_to_wipe
+    allowed, reason = check_safe_to_wipe(app.config['SQLALCHEMY_DATABASE_URI'])
+    if not allowed:
+        print(f"⛔ Abandon : {reason}")
+        sys.exit(1)
+    print(f"⚠️  Effacement de la base ({reason})")
     
     with app.app_context():
         print("🗄️  Initialisation de la base de données...")

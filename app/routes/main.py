@@ -4,7 +4,7 @@ Routes principales de l'application web AgriInvest Haïti
 """
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app, session, send_file, jsonify
-from flask_login import login_required, current_user, logout_user
+from flask_login import login_required, current_user, login_user, logout_user
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from urllib.parse import urlparse, urljoin
@@ -18,7 +18,7 @@ from app.models import (
     PlatformCommissionConfig, AnalyticsEvent, Notification
 )
 from app.models.enums import ProjectStatus, ContributionStatus, UserRole
-from app.extensions import db
+from app.extensions import db, login_throttle
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.services.payment_service import PaymentService
@@ -229,11 +229,11 @@ def contact():
         message = request.form.get('message')
         
         # Envoyer l'email
-        try:
-            EmailService.send_contact_message(name, email, subject, message)
+        if not (name and email and message):
+            flash('Nom, email et message sont requis.', 'warning')
+        elif EmailService.send_contact_message(name, email, subject, message):
             flash('Votre message a été envoyé. Nous vous répondrons dans les plus brefs délais.', 'success')
-        except Exception as e:
-            current_app.logger.error(f"Erreur envoi email: {e}")
+        else:
             flash('Une erreur est survenue. Veuillez réessayer plus tard.', 'danger')
         
         return redirect(url_for('main.contact'))
@@ -287,6 +287,7 @@ def privacy():
 # ============================================================================
 
 @bp.route('/login', methods=['GET', 'POST'])
+@login_throttle
 def login():
     """Page de connexion"""
     if current_user.is_authenticated:
@@ -326,6 +327,8 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         role = request.form.get('role', 'investor')
+        if role not in ('investor', 'farmer'):
+            role = 'investor'  # jamais admin/agent/ambassadeur par auto-inscription
         phone = request.form.get('phone')
         country = request.form.get('country', 'HT')
         
@@ -398,15 +401,27 @@ def forgot_password():
         
         if user:
             token = AuthService.generate_reset_token(email)
-            EmailService.send_password_reset_email(user, token)
-            flash('Un email de réinitialisation vous a été envoyé.', 'success')
-        else:
-            # Ne pas révéler si l'email existe ou non (sécurité)
-            flash('Si cet email existe, vous recevrez un lien de réinitialisation.', 'info')
+            if not EmailService.send_password_reset_email(user, token):
+                current_app.logger.error(f"Échec d'envoi de l'email de réinitialisation à l'utilisateur {user.id}")
+        # Même message dans tous les cas : ne révèle pas si l'adresse existe
+        flash('Si cet email existe, vous recevrez un lien de réinitialisation.', 'info')
         
         return redirect(url_for('main.login'))
     
     return render_template('forgot_password.html')
+
+
+@bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Confirmation de l'adresse email (lien reçu par email)"""
+    user = AuthService.verify_email_token(token)
+    if not user:
+        flash('Lien de vérification invalide ou expiré.', 'danger')
+        return redirect(url_for('main.login'))
+    if not user.is_verified:
+        user.verify_email()
+    flash('Votre adresse email est confirmée. Merci !', 'success')
+    return redirect(url_for('main.dashboard') if current_user.is_authenticated else url_for('main.login'))
 
 
 @bp.route('/reset-password/<token>', methods=['GET', 'POST'])
@@ -803,12 +818,18 @@ def publish_project(project_id):
     if project.farmer_id != current_user.id and not current_user.is_admin:
         abort(403)
     
+    if project.status not in ('draft', 'pending'):
+        flash('Ce projet ne peut plus être publié.', 'warning')
+        return redirect(url_for('main.project_detail', project_id=project.id))
+
     if not project.image_url:
         flash('Veuillez ajouter une image avant de publier', 'warning')
         return redirect(url_for('main.edit_project', project_id=project.id))
-    
-    project.publish()
-    flash('Projet publié avec succès !', 'success')
+
+    if project.submit_for_publication():
+        flash('Projet publié avec succès !', 'success')
+    else:
+        flash('Projet soumis : il sera publié après validation par un administrateur.', 'info')
     return redirect(url_for('main.project_detail', project_id=project.id))
 
 
@@ -874,8 +895,8 @@ def invest(project_id):
             # Calculer les valeurs par défaut
             amount_htg = amount
             charge_amount, charge_currency, rate = amount, 'HTG', Decimal('1')
-            if payment_method == 'stripe':
-                # Stripe ne gère pas le HTG : la carte est débitée en USD au taux du jour
+            if payment_method in ('stripe', 'paypal'):
+                # Stripe et PayPal ne gèrent pas le HTG : débit en USD au taux du jour
                 from app.utils.exchange_rates import get_exchange_rate
                 try:
                     rate = get_exchange_rate('USD', 'HTG')
@@ -885,7 +906,7 @@ def invest(project_id):
                 charge_amount = (amount / rate).quantize(Decimal('0.01'))
                 charge_currency = 'USD'
                 if charge_amount < Decimal('0.50'):
-                    flash("Montant trop faible pour un paiement par carte.", 'warning')
+                    flash("Montant trop faible pour ce moyen de paiement.", 'warning')
                     return redirect(url_for('main.invest', project_id=project_id))
                 amount_htg = (charge_amount * rate).quantize(Decimal('0.01'))
             gateway_fee = Decimal('0')
@@ -993,6 +1014,17 @@ def pay_with_card(contribution_id):
 @login_required
 def payment_success():
     """Retour de la passerelle : la confirmation réelle arrive par webhook signé"""
+    # Retour PayPal : ?token=<order_id>. On capture sans attendre le webhook (idempotent côté PayPal),
+    # uniquement pour une commande appartenant à l'utilisateur connecté.
+    order_id = request.args.get('token')
+    if order_id:
+        contribution = Contribution.query.filter_by(
+            paypal_order_id=order_id, investor_id=current_user.id).first()
+        if contribution and contribution.status == ContributionStatus.PENDING:
+            from app.utils.paypal import capture_paypal_order
+            from app.utils.payments import verify_payment
+            if capture_paypal_order(order_id) and verify_payment(contribution):
+                contribution.mark_completed()
     flash('Paiement reçu. Votre contribution sera confirmée dès validation par la passerelle.', 'success')
     return redirect(url_for('main.investor_dashboard'))
 

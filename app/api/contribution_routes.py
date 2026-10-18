@@ -2,6 +2,8 @@
 Routes pour les contributions (investissements)
 """
 
+from app.utils.audit import record_audit
+from app.utils.pagination import per_page_arg
 from decimal import Decimal, InvalidOperation
 
 from flask import request, jsonify, current_app, url_for, Blueprint
@@ -60,6 +62,8 @@ def create_contribution(project_id):
     from app.utils.exchange_rates import get_exchange_rate
     
     currency = (data.get('currency') or current_user.preferred_currency).upper()
+    if data['payment_method'] in ('stripe', 'paypal') and currency == 'HTG':
+        return jsonify({'error': "Ce moyen de paiement n'accepte pas le HTG : choisissez USD, EUR ou CAD"}), 400
     try:
         exchange_rate = get_exchange_rate(currency, 'HTG')
         project_rate = get_exchange_rate(currency, project.currency)
@@ -185,6 +189,9 @@ def refund_contribution(contribution_id):
     
     if contribution.status != 'completed':
         return jsonify({'error': 'Seules les contributions complétées peuvent être remboursées'}), 400
+
+    if contribution.transfer_batch_id:
+        return jsonify({'error': 'Contribution incluse dans un lot de transfert : remboursement impossible'}), 409
     
     # Traiter le remboursement via le gateway
     from app.utils.payments import process_refund
@@ -193,6 +200,8 @@ def refund_contribution(contribution_id):
         refund_result = process_refund(contribution)
         
         if refund_result:
+            record_audit('contribution.refund', contribution, amount_htg=contribution.amount_htg,
+                         payment_method=contribution.payment_method)
             contribution.mark_refunded()
             return jsonify({'message': 'Contribution remboursée avec succès'}), 200
         else:
@@ -207,7 +216,7 @@ def refund_contribution(contribution_id):
 def get_my_contributions():
     """Récupère mes contributions"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = per_page_arg(20)
     status = request.args.get('status')
     
     query = Contribution.query.filter_by(investor_id=current_user.id)
@@ -270,10 +279,15 @@ def get_payment_methods():
 @contribution_bp.route('/estimate-fees', methods=['POST'])
 def estimate_fees():
     """Estime les frais pour une contribution"""
-    data = request.get_json()
-    amount = Decimal(str(data['amount']))
-    currency = data['currency']
-    payment_method = data['payment_method']
+    data = request.get_json(silent=True) or {}
+    try:
+        amount = Decimal(str(data['amount']))
+        if not amount.is_finite() or amount <= 0:
+            raise InvalidOperation
+        currency = data['currency']
+        payment_method = data['payment_method']
+    except (KeyError, InvalidOperation):
+        return jsonify({'error': 'amount (> 0), currency et payment_method requis'}), 400
     country = data.get('country', 'HT')
     
     from app.utils.exchange_rates import get_exchange_rate
