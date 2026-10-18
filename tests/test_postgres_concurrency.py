@@ -12,7 +12,8 @@ import pytest
 from sqlalchemy import text
 
 from app.extensions import db
-from app.models import CollectionPoint, Contribution, PlatformEarning, ProjectCollectionPoint
+from app.models import (CollectionPoint, CollectionPointAgent, Contribution, PlatformEarning,
+                        ProjectCollectionPoint)
 from app.models.enums import ContributionStatus, UserRole
 from tests.conftest import login_as, make_user
 
@@ -69,6 +70,7 @@ def test_cash_receipt_waits_for_locked_contribution_then_refuses_replay(client, 
     db.session.add(point)
     db.session.flush()
     db.session.add(ProjectCollectionPoint(project_id=project.id, collection_point_id=point.id))
+    db.session.add(CollectionPointAgent(collection_point_id=point.id, agent_id=agent.id))
     c = cash_contribution(investor, project)
     db.session.commit()
     login_as(client, agent)

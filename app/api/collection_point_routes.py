@@ -7,7 +7,8 @@ from decimal import Decimal, InvalidOperation
 from flask import request, jsonify, Blueprint, current_app
 from flask_login import login_required, current_user
 from app.api import api_bp
-from app.models import CollectionPoint, ProjectCollectionPoint, Project, Contribution
+from app.models import (CollectionPoint, ProjectCollectionPoint, Project, Contribution,
+                        CollectionPointAgent, User)
 from app.extensions import db
 from app.utils.decorators import admin_required, agent_required
 
@@ -44,6 +45,59 @@ def _existing_project_ids(project_ids):
     return sorted(set(project_ids))
 
 
+@collection_bp.route('/mine', methods=['GET'])
+@login_required
+@agent_required
+def my_collection_points():
+    """Points de collecte où l'agent connecté est autorisé à encaisser"""
+    links = CollectionPointAgent.query.filter_by(agent_id=current_user.id).all()
+    return jsonify({'collection_points': [l.point.to_dict() for l in links if l.point.is_active]}), 200
+
+
+@collection_bp.route('/<int:point_id>/agents', methods=['GET'])
+@login_required
+@admin_required
+def list_point_agents(point_id):
+    point = CollectionPoint.query.get_or_404(point_id)
+    return jsonify({'agents': [
+        {'id': l.agent.id, 'name': l.agent.name, 'email': l.agent.email, 'is_active': l.agent.is_active}
+        for l in point.agent_links.all()]}), 200
+
+
+@collection_bp.route('/<int:point_id>/agents', methods=['POST'])
+@login_required
+@admin_required
+def assign_agent(point_id):
+    """Autorise un agent à encaisser des espèces à ce point"""
+    point = CollectionPoint.query.get_or_404(point_id)
+    data = request.get_json(silent=True) or {}
+    agent_id = data.get('agent_id')
+    if isinstance(agent_id, bool) or not isinstance(agent_id, int):
+        return jsonify({'error': 'agent_id (entier) requis'}), 400
+    agent = db.session.get(User, agent_id)
+    if not agent:
+        return jsonify({'error': 'Utilisateur introuvable'}), 404
+    if agent.role != 'agent' or not agent.is_active:
+        return jsonify({'error': 'Seul un compte agent actif peut être rattaché'}), 400
+    if CollectionPointAgent.query.filter_by(collection_point_id=point.id, agent_id=agent.id).first():
+        return jsonify({'message': 'Agent déjà rattaché'}), 200
+    db.session.add(CollectionPointAgent(collection_point_id=point.id, agent_id=agent.id))
+    record_audit('collection_point.agent_assign', point, agent_id=agent.id, agent_email=agent.email)
+    db.session.commit()
+    return jsonify({'message': 'Agent rattaché au point de collecte'}), 201
+
+
+@collection_bp.route('/<int:point_id>/agents/<int:agent_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def unassign_agent(point_id, agent_id):
+    link = CollectionPointAgent.query.filter_by(collection_point_id=point_id, agent_id=agent_id).first_or_404()
+    record_audit('collection_point.agent_unassign', link.point, agent_id=agent_id)
+    db.session.delete(link)
+    db.session.commit()
+    return jsonify({'message': 'Agent retiré du point de collecte'}), 200
+
+
 @collection_bp.route('/<int:point_id>/receive-cash', methods=['POST'])
 @login_required
 @agent_required
@@ -58,6 +112,11 @@ def receive_cash(point_id):
 
     if not point.is_active:
         return jsonify({'error': 'Ce point de collecte est inactif'}), 409
+
+    # Un agent n'encaisse que là où un administrateur l'a rattaché (les administrateurs sont exemptés)
+    if not current_user.is_admin and not CollectionPointAgent.query.filter_by(
+            collection_point_id=point.id, agent_id=current_user.id).first():
+        return jsonify({'error': "Vous n'êtes pas rattaché à ce point de collecte"}), 403
 
     receipt = str(data.get('receipt_number') or '').strip()
     if not receipt or len(receipt) > 50:
